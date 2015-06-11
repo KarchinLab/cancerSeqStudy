@@ -9,7 +9,7 @@ if ("getopt" %in% rownames(installed.packages())){
   # get command line arguments
   library(getopt)
   spec <- matrix(c(
-    'mcores', 'c', 1, 'character',
+    'mcores', 'c', 1, 'integer',
     'output', 'o', 1, 'character'
   ), byrow=TRUE, ncol=4)
   opt = getopt(spec)
@@ -215,8 +215,8 @@ run.analysis <- function(x){
     tmp.df['sample min'] <- bbd.samp.size.min
     tmp.df['sample max'] <- bbd.samp.size.max
     tmp.df['CV'] <- mycv
-    tmp.df['alpha.level'] <- alpha.level
-    tmp.df['effect.size'] <- effect.size
+    tmp.df['alpha.level'] <- myalpha.level
+    tmp.df['effect.size'] <- myeffect.size
     tmp.df['mutation.rate'] <- my.mu
     tmp.df["FP"] <- fp.result
     result.df <- rbind(result.df, tmp.df)
@@ -238,7 +238,8 @@ run.analysis <- function(x){
 #############################
 # define the model params
 #############################
-rate <<- c(.1e-6, .3e-6, .5e-6, 7e-6, 1e-6, 2e-6, 3e-6, 5e-6, 7e-6, 8e-6 10e-6)
+rate <<- c(.1e-6, .2e-6, .3e-6, .5e-6, 7e-6, 1e-6, 1.5e-6, 2e-6, 3e-6, 
+           4e-6, 5e-6, 6e-6, 7e-6, 8e-6, 9e-6, 10e-6)
 fg <<- 3.9  # an adjustment factor that lawrence et al used for variable gene length
 rate <<- fg*rate
 
@@ -246,13 +247,12 @@ nonsilentFactor <<- 3/4
 L <<- 1500  # same length as used in paper
 Leff <<- L * nonsilentFactor
 N <<- 20000
-by.step <<- 50
+by.step <<- 25
 samp.sizes <<- seq(by.step, N, by=by.step)
 desired.power <<- .9
 possible.cv <<- c(.05, .1, .2)
 effect.sizes <<- c(.01, .02, .05)
 alpha.levels <<- c(1e-4, 5e-6)
-
 
 ##################################
 # Loop through different params
@@ -264,17 +264,16 @@ for (i in 1:length(rate)){
   for (effect.size in effect.sizes){
     # loop over alpha levels
     for (alpha.level in alpha.levels){
-      # loop over various coefficient of variations
-      #for (mycv in possible.cv){
-      param.list[[counter]] <- c(rate[i], effect.size, alpha.level)
+      param.list[[counter]] <- c(rate[i], effect.size, alpha.level, possible.cv)
       counter <- counter + 1
-      #}
     }
   }
 }
 
+############################
 # run analysis
-result.list <- mclapply(param.list, run.analysis, mc.cores=opts$mcores)
+############################
+result.list <- mclapply(param.list, run.analysis, mc.cores=opt$mcores)
 result.df <- do.call("rbind", result.list)
 
 # adjust mutation rates back to the average
@@ -286,4 +285,4 @@ result.df$effect.size <- factor(result.df$effect.size, levels=unique(result.df$e
 ######################
 # Save result to text file
 ######################
-write.table(result.df, opts$output, sep='\t')
+write.table(result.df, opt$output, sep='\t')
