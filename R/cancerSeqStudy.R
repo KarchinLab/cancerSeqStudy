@@ -19,9 +19,9 @@ if ("getopt" %in% rownames(installed.packages())){
   opt <- list(ARGS=NULL)
 }
 
-library(VGAM)
-library(reshape2)
-library(parallel)
+suppressPackageStartupMessages(library(VGAM))
+suppressPackageStartupMessages(library(reshape2))
+suppressPackageStartupMessages(library(parallel))
 
 #' calculates the power in a binomial power model
 #'
