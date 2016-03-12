@@ -1,0 +1,13 @@
+Package: cancerStudy
+Title: Power and False Positive Analysis of Cancer Sequencing Studies
+Version: 0.1.0
+Authors@R: person("Collin", "Tokheim", email =
+ "ctokheim@jhu.edu", role = c("aut", "cre"))
+Description: This package examines statistical power and false positives for significantly mutated gene approaches in exome sequencing of cancer samples. Complications caused by uncertainty due to heterogenous mutation rate is included in the analysis.
+Depends: R (>= 3.1.0)
+LazyData: true
+Imports:
+ parallel,
+ gridExtra,
+ VGAM,
+ reshape2
