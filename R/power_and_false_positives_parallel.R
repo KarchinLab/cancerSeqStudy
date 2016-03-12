@@ -15,6 +15,8 @@ if ("getopt" %in% rownames(installed.packages())){
   if ( !is.null(opt$help) ) {
     cat(getopt(spec, usage=TRUE));
     q(status=1);
+  } else if (is.null(args$mcores) | is.null(args$output)){
+    opt <- list(ARGS=NULL)
   }
 } else {
   opt <- list(ARGS=NULL)
