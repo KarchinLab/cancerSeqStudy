@@ -1,14 +1,11 @@
-library(VGAM)
-library(reshape2)
-library(parallel)
-
 # get command line args
 if ("getopt" %in% rownames(installed.packages())){
   # get command line arguments
   library(getopt)
   spec <- matrix(c(
     'mcores', 'c', 1, 'integer',
-    'output', 'o', 1, 'character'
+    'output', 'o', 1, 'character',
+    'help', 'h', 0, 'logical'
   ), byrow=TRUE, ncol=4)
   opt = getopt(spec)
   # print out help msg
@@ -21,6 +18,10 @@ if ("getopt" %in% rownames(installed.packages())){
 } else {
   opt <- list(ARGS=NULL)
 }
+
+library(VGAM)
+library(reshape2)
+library(parallel)
 
 #' calculates the power in a binomial power model
 #'
