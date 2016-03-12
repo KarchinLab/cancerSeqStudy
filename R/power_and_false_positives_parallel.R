@@ -1,7 +1,5 @@
 library(VGAM)
 library(reshape2)
-library(ggplot2)
-library(gridExtra)
 library(parallel)
 
 # get command line args
@@ -33,7 +31,7 @@ binom.power <- function(my.mu,
                         N,
                         Leff=1500*3/4,
                         r=.02,
-                        alpha.level=1e-4){
+                        alpha.level=5e-6){
   # examine power of binomial test
   # first find critical value based on binomial distribution
   # Calculate power for various sizes with different effects
