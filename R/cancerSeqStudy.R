@@ -67,20 +67,21 @@ binom.power <- function(my.mu,
 #' calculates the false positives in a binomial model
 #' if there is over-diserspion
 #'
-#' @param my.mu per base rate of mutation for binomial
 #' @param my.alpha alpha parameter for beta binomial
 #' @param my.beta beta parameter for beta binomial
 #' @param N list of sample to calculate power for
 #' @param Leff effective gene length in bases
 #' @param num.genes number of genes that are tested
-#' @param r effect size for power analysis
+#' @param r effect size for power analysis (fraction of samples above background)
 #' @param alphaLevel : alpha level for power analysis
-binom.false.pos <- function(my.mu, my.alpha, my.beta,
+binom.false.pos <- function(my.alpha, my.beta,
                             N,
                             Leff=1500*3/4,
                             num.genes=18500,
                             r=.02,
                             alpha.level=5e-6){
+  # calculate mutation rate from alpha/beta
+  my.mu <- my.alpha / (my.alpha + my.beta)
   # examine power of binomial test
   # first find critical value based on binomial distribution
   # Calculate power for various sizes with different effects
@@ -113,18 +114,19 @@ binom.false.pos <- function(my.mu, my.alpha, my.beta,
 
 #' calculates the power in a beta-binomial model
 #'
-#' @param my.mu per base rate of mutation for binomial
 #' @param my.alpha alpha parameter for beta binomial
 #' @param my.beta beta parameter for beta binomial
 #' @param N maximum number of sample to calculate power for
 #' @param Leff effective gene length in bases
 #' @param r effect size for power analysis
 #' @param alphaLevel alpha level for power analysis
-bbd.power <- function(my.mu, my.alpha, my.beta,
+bbd.power <- function(my.alpha, my.beta,
                       N,
                       Leff=1500*3/4,
                       r=.02,
                       alpha.level=5e-6){
+  # calc the mutation rate from alpha/beta
+  my.mu <- my.alpha / (my.alpha + my.beta)
   # examine power of binomial test
   # first find critical value based on binomial distribution
   # Calculate power for various sizes with different effects
@@ -195,7 +197,7 @@ bbdRequiredSampleSize <- function(desired.power, mu, cv, possible.samp.sizes,
   params <- rateCvToAlphaBeta(mu, cv)
   
   # calc power
-  power.result.bbd <- bbd.power(mu, params$alpha, params$beta, possible.samp.sizes, Leff, 
+  power.result.bbd <- bbd.power(params$alpha, params$beta, possible.samp.sizes, Leff, 
                                 alpha.level=alpha.level, r=effect.size)
   
   # find min/max samples to achieve desired power
@@ -265,7 +267,7 @@ bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, s
   pow.vec <- c()
   for(effect.size in possible.effect.sizes){
     # calc power
-    pow <- bbd.power(mu, params$alpha, params$beta, samp.size, Leff, 
+    pow <- bbd.power(params$alpha, params$beta, samp.size, Leff, 
                      alpha.level=alpha.level, r=effect.size)
     pow.vec <- c(pow.vec, pow)
   }
@@ -333,7 +335,7 @@ bbdFullAnalysis <- function(mu, cv, Leff, alpha.level, effect.size,
   params <- rateCvToAlphaBeta(mu, cv)
   
   # find expected number of false positives
-  fp.result <- binom.false.pos(mu, params$alpha, params$beta, samp.sizes, Leff, 
+  fp.result <- binom.false.pos(params$alpha, params$beta, samp.sizes, Leff, 
                                alpha.level=alpha.level, r=effect.size)
   
   # save binomial data
