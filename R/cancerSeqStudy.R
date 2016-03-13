@@ -422,8 +422,8 @@ if (!is.null(opt$ARGS)){
   #############################
   # define the model params
   #############################
-  rate <- c(.1e-6, .2e-6, .3e-6, .4e-6, .5e-6, 7e-6, .8e-6, 1e-6, 1.5e-6, 2e-6, 2.5e-6, 3e-6, 3.5e-6, 4e-6,
-              4.5e-6, 5e-6, 5.5e-6, 6e-6, 6.5e-6, 7e-6, 7.5e-6, 8e-6, 8.5e-6, 9e-6, 10e-6, 11e-6, 12e-6)
+  rate <- c(.1e-6, .2e-6, .3e-6, .4e-6, .5e-6, .7e-6, .8e-6, 1e-6, 1.25e-6, 1.5e-6, 1.75e-6, 2e-6, 2.25e-6, 2.5e-6, 2.75e-6, 3e-6, 3.5e-6, 4e-6,
+            4.5e-6, 5e-6, 5.5e-6, 6e-6, 6.5e-6, 7e-6, 7.5e-6, 8e-6, 8.5e-6, 9e-6, 10e-6, 11e-6, 12e-6)
   fg <- 3.9  # an adjustment factor that lawrence et al used for variable gene length
   rate <- fg*rate
   
