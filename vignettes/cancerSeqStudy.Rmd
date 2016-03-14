@@ -1,13 +1,71 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "Statistical analysis of significantly mutated genes"
+author: "Collin Tokheim"
 date: "`r Sys.Date()`"
 output: rmarkdown::pdf_document
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Statistical analysis of significantly mutated genes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. Analysis not accounting for the uncertainty in mutation rate yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
+
+## Sample Size Calculation
+
+An important aspect of designing cancer exome seqeuncing studies is to determine how many cancer samples are required for sufficient power to detect significantly mutated genes present at a certain prevalence.
+
+### Assuming a known mutation rate
+
+In general the mutation rate is not precisely known, but could be assumed to be known for the sake of power calculations. This results in an overly optimistic assessment of the required number of cancer samples. In the known mutation rate scenario, an exact binomial power calculation is performed.
+
+```{r, fig.show='hold'}
+library(cancerSeqStudy)
+
+# setup parameters
+samp.sizes <- seq(100, 4000, by=100)
+desired.power <- .9
+eff.size <- .02  # fraction of samples above background
+mut.rate <- 1e-5
+alpha.level <- 5e-6  # roughly a bonferoni corrected significance level
+
+binomRequiredSampleSize(desired.power, mut.rate, samp.sizes, eff.size, alpha.level)
+```
+
+### Accounting for uncertain mutation rate
+
+Adjusting for uncertainty in mutation rate better represents the actual required number of sequenced samples. To handle uncertain mutation rates (with a certain coefficient of variation), a beta-binomial power test is performed.
+
+
+```{r, fig.show='hold'}
+# setup parameters
+cv <- .2  # coefficient of variation for mutation rate
+
+bbdRequiredSampleSize(desired.power, mut.rate, cv, samp.sizes, eff.size)
+```
+
+Notice the minimum required samples raised from 1,500 to 3,500 by accounting for uncertainty of mutation rate with a coefficient of variation of .2.
+
+## Calculating powered effect size
+
+If you already have a certain number of samples, often it is helpful to understand the extent to which rare significantly mutated genes are characterized. 
+
+
+```{r, fig.show='hold'}
+# setup parameters
+possible.eff.sizes <- seq(.01, .2, by=.01)  # fraction of samples above background
+num.samples <- 1000  # number of samples in study
+
+bbdPoweredEffectSize(possible.eff.sizes, desired.power, mut.rate, cv, num.samples, alpha.level)
+```
+
+In this example, drivers present in 4% of samples above background mutation rate have sufficient power to be detected.
+
+## Expected false positives
+
+
+
+## Systematically examining power and false postives
 
 Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
 
