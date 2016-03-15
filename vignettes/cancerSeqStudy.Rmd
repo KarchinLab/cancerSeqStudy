@@ -36,7 +36,6 @@ binomRequiredSampleSize(desired.power, mut.rate, samp.sizes, eff.size, alpha.lev
 
 Adjusting for uncertainty in mutation rate better represents the actual required number of sequenced samples. To handle uncertain mutation rates (with a certain coefficient of variation), a beta-binomial power test is performed.
 
-
 ```{r, fig.show='hold'}
 # setup parameters
 cv <- .2  # coefficient of variation for mutation rate
@@ -50,7 +49,6 @@ Notice the minimum required samples raised from 1,500 to 3,500 by accounting for
 
 If you already have a certain number of samples, often it is helpful to understand the extent to which rare significantly mutated genes are characterized. 
 
-
 ```{r, fig.show='hold'}
 # setup parameters
 possible.eff.sizes <- seq(.01, .2, by=.01)  # fraction of samples above background
@@ -63,54 +61,90 @@ In this example, drivers present in 4% of samples above background mutation rate
 
 ## Expected false positives
 
-
+```{r, fig.show='hold'}
+bbd.params <- rateCvToAlphaBeta(mut.rate, cv)
+binom.false.pos(bbd.params$alpha, bbd.params$beta, samp.sizes)
+```
 
 ## Systematically examining power and false postives
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+To fully understand the effects on power and false positives, a variable sweep over a grid of potential values can be done. This is best done in parallel on a server with multiple cores. Reducing the number of evaluate mutation rates or the effective number of sample sizes evaluated will substantially increase speed, but will provide lower resolution on the shape of statistical power and false positives. One approach is to download the source files from github and run cancerSeqStudy.R as a script.
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
-
-## Vignette Info
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r, engine = 'bash', eval = FALSE}
+$ cd cancerSeqStudy
+$ Rscript R/cancerSeqStudy.R -c 10 -o myoutput.txt
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+Where `-c` expressess the number of cores to use, and `-o` designates the output file name. To change the parameters which are evaluated requires changing the cancerSeqStudy script. Alternatively, cancerSeqStudy may be installed and can be run with creating a new R file that uses the installed library. An extensive parameter sweep is shown below.
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+```{r, eval=FALSE}
+library(cancerSeqStudy)
+library(reshape2)
+library(parallel)
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+#############################
+# running options
+#############################
+output <- "statistical_analysis_output.txt"  # file name to save output
+num.cores <- 1  # increase on multi-core computer to run faster!!!
 
-## More Examples
+#############################
+# define the model params
+#############################
+# long list of mutation rates to be evaluated
+rate <- c(.1e-6, .2e-6, .3e-6, .4e-6, .5e-6, .7e-6, .8e-6, 1e-6, 1.25e-6, 1.5e-6, 
+          1.75e-6, 2e-6, 2.25e-6, 2.5e-6, 2.75e-6, 3e-6, 3.5e-6, 4e-6, 4.5e-6, 5e-6, 
+          5.5e-6, 6e-6, 6.5e-6, 7e-6, 7.5e-6, 8e-6, 8.5e-6, 9e-6, 10e-6, 11e-6, 12e-6)
+fg <- 3.9  # an adjustment factor that lawrence et al used for variable gene length
+rate <- fg*rate  # nominal rates are adjusted (will have to adjust back after analysis is done)
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+# model parameters
+nonsilentFactor <- 3/4  # roughly the fraction of mutations that are non-silent
+L <- 1500  # same length as used in lawrence et al. paper
+Leff <- L * nonsilentFactor
+desired.power <- .9  # aka 90% power
+possible.cvs <- c(.05, .1, .2)  # coefficient of variation for mutation rate per base
+effect.sizes <- c(.01, .02, .05)  # fraction of samples above background
+alpha.levels <- c(1e-4, 5e-6)  # level of significance
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+# setting up the sample sizes to check
+N <- 25000
+by.step <- 25
+samp.sizes <- seq(by.step, N, by=by.step)  # grid of sample sizes to check
+
+##################################
+# Loop through different params
+##################################
+param.list <- list()
+counter <- 1
+for (i in 1:length(rate)){
+  # loop over effect sizes
+  for (effect.size in effect.sizes){
+    # loop over alpha levels
+    for (alpha.level in alpha.levels){
+      param.list[[counter]] <- c(rate[i], effect.size, alpha.level)
+      counter <- counter + 1
+    }
+  }
+}
+
+############################
+# run analysis
+############################
+result.list <- mclapply(param.list, runAnalysisList, mc.cores=num.cores,
+                        samp.sizes=samp.sizes, desired.power=desired.power,
+                        Leff=Leff, possible.cvs=possible.cvs)
+result.df <- do.call("rbind", result.list)
+
+# adjust mutation rates back to the average
+result.df$mutation.rate <- result.df$mutation.rate / fg
+# convert to factor
+result.df$mutation.rate <- factor(result.df$mutation.rate, levels=unique(result.df$mutation.rate))
+result.df$effect.size <- factor(result.df$effect.size, levels=unique(result.df$effect.size))
+
+######################
+# Save result to text file
+######################
+write.table(result.df, output, sep='\t')
 ```
 
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
