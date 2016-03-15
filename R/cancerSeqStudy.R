@@ -69,11 +69,11 @@ binom.power <- function(my.mu,
 #'
 #' @param my.alpha alpha parameter for beta binomial
 #' @param my.beta beta parameter for beta binomial
-#' @param N list of sample to calculate power for
+#' @param N vector of # samples to calculate power for
 #' @param Leff effective gene length in bases
 #' @param num.genes number of genes that are tested
 #' @param r effect size for power analysis (fraction of samples above background)
-#' @param alphaLevel : alpha level for power analysis
+#' @param alphaLevel alpha level for power analysis
 binom.false.pos <- function(my.alpha, my.beta,
                             N,
                             Leff=1500*3/4,
@@ -422,21 +422,25 @@ if (!is.null(opt$ARGS)){
   #############################
   # define the model params
   #############################
+  # long list of rates to be evaluated
   rate <- c(.1e-6, .2e-6, .3e-6, .4e-6, .5e-6, .7e-6, .8e-6, 1e-6, 1.25e-6, 1.5e-6, 1.75e-6, 2e-6, 2.25e-6, 2.5e-6, 2.75e-6, 3e-6, 3.5e-6, 4e-6,
             4.5e-6, 5e-6, 5.5e-6, 6e-6, 6.5e-6, 7e-6, 7.5e-6, 8e-6, 8.5e-6, 9e-6, 10e-6, 11e-6, 12e-6)
   fg <- 3.9  # an adjustment factor that lawrence et al used for variable gene length
-  rate <- fg*rate
+  rate <- fg*rate  # nominal rates are adjusted (will have to adjust back after analysis is done)
   
-  nonsilentFactor <- 3/4
-  L <- 1500  # same length as used in paper
+  # model parameters
+  nonsilentFactor <- 3/4  # roughly the fraction 
+  L <- 1500  # same length as used in lawrence et al. paper
   Leff <- L * nonsilentFactor
+  desired.power <- .9  # aka 90% power
+  possible.cvs <- c(.05, .1, .2)  # coefficient of variation for mutation rate per base
+  effect.sizes <- c(.01, .02, .05)  # fraction of samples above background
+  alpha.levels <- c(1e-4, 5e-6)  # level of significance
+  
+  # setting up the sample sizes to check
   N <- 25000
   by.step <- 25
-  samp.sizes <- seq(by.step, N, by=by.step)
-  desired.power <- .9
-  possible.cvs <- c(.05, .1, .2)
-  effect.sizes <- c(.01, .02, .05)
-  alpha.levels <- c(1e-4, 5e-6)
+  samp.sizes <- seq(by.step, N, by=by.step)  # grid of sample sizes to check
   
   ##################################
   # Loop through different params
