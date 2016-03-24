@@ -7,6 +7,7 @@ Description: This package examines statistical power and false positives for
     significantly mutated gene approaches in exome sequencing of cancer samples.
     Complications caused by uncertainty due to heterogenous mutation rate is
     included in the analysis.
+License: TODO
 Depends:
     R (>= 3.1.0)
 LazyData: true
