@@ -9,7 +9,44 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. Analysis not accounting for the uncertainty in mutation rate yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
+Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes (SMG) fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. Analysis not accounting for the uncertainty in mutation rate yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
+
+## Relevant parameters
+
+### Significantly mutated gene (SMG)
+
+SMG methods rely on estimating a background mutation rate (BMR), which in this package is represented by the parameter mu or "rate". A simple model for the accumulation of non-silent mutations in genes uses a binomial distribution that has *fixed* rate over the length of the gene. The `L` parameter controls the number of bases for an average gene (for simplicity genes have the same length). Because approximately 3/4 of point mutations lead to non-silent changes, an effective length `Leff=3/4*L` (roughly this fraction is expected purely based on the codon table). The mutation rate varies substantially depending on the particular cancer type of interest, so the mutation rate should be varied accordingly. An additional complexity is the mutation rate varies substantially over genes, with gene expression and replication timing correlated with mutation rate. To compensate for this variation above expected purely based on the aggregate samples in the tumor type, Lawrence *et al.* proposed the nominal tumor type mutation rate should be adjusted by a gene specfic multiplication factor `fg=3.9`, representing the 90th percentile of genes. Internally cancerSeqStudy does not apply this multiplication factor, so users should adjust for this prior to input. 
+
+The above scenario reflects a known fixed mutation rate. Realistically, however, the background mutation rate is estimated and can be uncertain due to both technical and biological factors. To account for uncertainty, a certain coefficient of variation (CV) for the mutation rate can be allowed using a beta-binomial distribution. To move from mutation rate and CV to $\alpha$ and $\beta$ (typical parameterization of a beta-binomial), the `rateCvToAlphaBeta` function is used.
+
+```{r, fig.show='hold'}
+library(cancerSeqStudy)
+
+# calculate the mutation rate
+fg <- 3.9
+nominal.rate <- 3e-6
+adjusted.rate <- fg * nominal.rate
+
+# record the coefficient of variation
+cv <- .2
+
+# calculate the alpha and beta parameters
+rateCvToAlphaBeta(adjusted.rate, cv)
+```
+
+### Statistical Power
+
+Statistical power calculations involve several relevant parameters, where the last parameter is solved in terms of the other known parameters. 
+
+* power
+* sample size
+* effect size
+
+The `*RequiredSampleSize` functions (\*="bbd" or "binom") calculate the needed number of samples to achieve a desired power for an effect size at a given significance level. Here, effect size is always the fraction of samples above the background mutation rate (BMR). So .02 represents mutated in 2% additional samples above expected from BMR.  While the `*PoweredEffectSize` reports the effect size for wich there is sufficient power at a given sample size.
+
+### Expected false positives
+
+In the situation where there is additional unaccounted variability in the mutation rate not captured by the model, then it is expected there will be inflated false positives. To evaluate the expected number of false positives, a binomial model is compared with a beta-binomial with a certain level of residual uncertainty in the mutation rate. The beta-binomial represents the actual true variation, while the binomial model represents that utilized for a SMG analysis. In this scenario the critical value establishing the threshold for statistical significance is established by the binomial model, and the probability that a beta-binomial reaches this baseline is calculated. Assuming a total number of genes (18,500 by default), the expected number of false positive significantly mutated genes is simply the probability times the number of genes.
 
 ## Sample Size Calculation
 
@@ -65,6 +102,8 @@ In this example, drivers present in 4% of samples above background mutation rate
 bbd.params <- rateCvToAlphaBeta(mut.rate, cv)
 binom.false.pos(bbd.params$alpha, bbd.params$beta, samp.sizes)
 ```
+
+Here, the total number of genes (`num.genes`) was left at the default of 18,500, and likewise for the significance level (5e-6) and effective gene length (1500*3/4).
 
 ## Systematically examining power and false postives
 
