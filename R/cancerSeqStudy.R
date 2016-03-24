@@ -28,7 +28,7 @@ suppressPackageStartupMessages(library(parallel))
 #' @param my.mu per base rate of mutation for binomial
 #' @param N vector of sample sizes
 #' @param r effect size for power analysis
-#' @param alphaLevel alpha level for power analysis
+#' @param signif.level alpha level for power analysis
 #' @return vector containing power for each sample size
 binom.power <- function(my.mu,
                         N,
@@ -72,12 +72,10 @@ binom.power <- function(my.mu,
 #' @param N vector of # samples to calculate power for
 #' @param Leff effective gene length in bases
 #' @param num.genes number of genes that are tested
-#' @param r effect size for power analysis (fraction of samples above background)
-#' @param alphaLevel alpha level for power analysis
+#' @param signif.level alpha level for power analysis
 binom.false.pos <- function(my.alpha, my.beta,
                             N, Leff=1500*3/4,
                             num.genes=18500,
-                            #r=.02,
                             signif.level=5e-6){
   # calculate mutation rate from alpha/beta
   my.mu <- my.alpha / (my.alpha + my.beta)
@@ -112,7 +110,7 @@ binom.false.pos <- function(my.alpha, my.beta,
 #' @param N maximum number of sample to calculate power for
 #' @param Leff effective gene length in bases
 #' @param r effect size for power analysis
-#' @param alphaLevel alpha level for power analysis
+#' @param signif.level alpha level for power analysis
 bbd.power <- function(my.alpha, my.beta,
                       N,
                       Leff=1500*3/4,
@@ -180,7 +178,7 @@ rateCvToAlphaBeta <- function(rate, cv) {
 #' @param cv Coefficient of Variation surrounding the uncertaintly in mutation rate
 #' @param possible.samp.sizes vector of possible number of cancer samples in study
 #' @param effect.size fraction of samples above background mutation rate
-#' @param alpha.level significance level for binomial test
+#' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 bbdRequiredSampleSize <- function(desired.power, mu, cv, possible.samp.sizes, 
@@ -247,7 +245,7 @@ binomRequiredSampleSize <- function(desired.power, mu, possible.samp.sizes,
 #' @param mu Mutation rate per base
 #' @param cv Coefficient of Variation surrounding the uncertaintly in mutation rate
 #' @param samp.size number of cancer samples in study
-#' @param alpha.level significance level for binomial test
+#' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, samp.size, 
@@ -285,7 +283,7 @@ bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, s
 #' @param desired.power A floating point number indicating desired power
 #' @param mu Mutation rate per base
 #' @param samp.size number of cancer samples in study
-#' @param alpha.level significance level for binomial test
+#' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 binomPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, samp.size, 
