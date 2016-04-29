@@ -377,32 +377,32 @@ runAnalysisList <- function(x, samp.sizes,
                             desired.power=.9, Leff=1500*3/4, 
                             possible.cvs=c()){
   # unpack the parameters
-  mypi <- x[1]
+  mymu <- x[1]
   myeffect.size <- x[2]
   myalpha.level <- x[3]
   
   # run analysis
-  result.df <- runAnalysis(mypi, myeffect.size, myalpha.level,
+  result.df <- runAnalysis(mymu, myeffect.size, myalpha.level,
                            samp.sizes, desired.power, Leff, possible.cvs)
 
   return(result.df)
 }
 
 #' Runs the entire power and false positive analysis pipeline.
-runAnalysis <- function(pi, effect.size, signif.level,
+runAnalysis <- function(mu, effect.size, signif.level,
                         samp.sizes, desired.power=.9, 
                         Leff=1500*3/4, possible.cvs=c()){
   # run beta-binomial model
   result.df <- data.frame()
   for (mycv in possible.cvs){   
     # calculate false positives and power
-    tmp.df <- bbdFullAnalysis(pi, mycv, Leff, signif.level, effect.size, 
+    tmp.df <- bbdFullAnalysis(mu, mycv, Leff, signif.level, effect.size, 
                               desired.power, samp.sizes)
     result.df <- rbind(result.df, tmp.df)
   }
   
   # save binomial data
-  tmp.df <- binomFullAnalysis(pi, Leff, signif.level, effect.size, desired.power, samp.sizes)
+  tmp.df <- binomFullAnalysis(mu, Leff, signif.level, effect.size, desired.power, samp.sizes)
   result.df <- rbind(result.df, tmp.df)
   
   return(result.df)
