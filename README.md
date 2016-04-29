@@ -4,10 +4,10 @@ Identifying genes with more mutations then expected has been central methodology
 
 ## Installation
 
-[![Build Status](https://travis-ci.com/ctokheim/cancerSeqStudy.svg?token=KhnctpTdxNuuZ9Z1kcsg&branch=master)](https://travis-ci.com/ctokheim/cancerSeqStudy)
+[![Build Status](https://travis-ci.org/KarchinLab/cancerSeqStudy.svg?branch=master)](https://travis-ci.org/KarchinLab/cancerSeqStudy)
 
 Install this package via github using the `devtools` package.
 
 ```R
-> devtools::install_github('ctokheim/cancerSeqStudy')
+> devtools::install_github('KarchinLab/cancerSeqStudy')
 ```
