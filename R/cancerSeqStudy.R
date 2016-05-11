@@ -466,6 +466,52 @@ binomPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, sam
   return(result)
 }
 
+ratiometricBinomPoweredEffectSize <- function(possible.effect.sizes, desired.power, p, mu, 
+                                              samp.size, signif.level=5e-6, L=1500) {
+  # calculate the power for each effect size
+  pow.vec <- c()
+  for(effect.size in possible.effect.sizes){
+    pow <- ratiometric.binom.power(p, samp.size, mu, L, 
+                                   signif.level=signif.level,
+                                   r=effect.size)
+    pow.vec <- c(pow.vec, pow)
+  }
+  
+  # find the effect size
+  binom.eff.size.min <- possible.effect.sizes[min(which(pow.vec>=desired.power))]
+  binom.eff.size.max <- possible.effect.sizes[max(which(pow.vec<desired.power))+1]
+  
+  # return result
+  result <- list(eff.size.min=binom.eff.size.min, eff.size.max=binom.eff.size.max,
+                 power=pow.vec, eff.size=possible.effect.sizes)
+  return(result)
+}
+
+ratiometricBbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, p, cv, mu, 
+                                            samp.size, signif.level=5e-6, L=1500) {
+  # figure out alpha/beta for beta-binomial
+  params <- rateCvToAlphaBeta(p, cv)
+  
+  # calculate the power for each effect size
+  pow.vec <- c()
+  for(effect.size in possible.effect.sizes){
+    pow <- ratiometric.bbd.power(params$alpha, params$beta, 
+                                 samp.size, mu, L, 
+                                 signif.level=signif.level,
+                                 r=effect.size)
+    pow.vec <- c(pow.vec, pow)
+  }
+  
+  # find the effect size
+  bbd.eff.size.min <- possible.effect.sizes[min(which(pow.vec>=desired.power))]
+  bbd.eff.size.max <- possible.effect.sizes[max(which(pow.vec<desired.power))+1]
+  
+  # return result
+  result <- list(eff.size.min=bbd.eff.size.min, eff.size.max=bbd.eff.size.max,
+                 power=pow.vec, eff.size=possible.effect.sizes)
+  return(result)
+}
+
 #############################
 # Analyze power and false positives
 # when using a beta-binomial model
