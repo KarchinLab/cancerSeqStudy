@@ -144,6 +144,100 @@ bbd.power <- function(my.alpha, my.beta,
   return(power)
 }
 
+ratiometric.binom.power <- function(p, N, mu,
+                                    L=1500,r=.02,
+                                    signif.level=5e-6){
+  # figure out the target mutation rate for effect size is
+  muEffect <- 1 - ((1-mu)^(L) - r)^(1/L)
+  # Calculate the discrepancy between the background and
+  # target effect size
+  muDiff <- muEffect - mu
+  # given the mutation rates calculate the target effect
+  # size for a ratio-metric method
+  pEffect <- (mu*p + muDiff) / muEffect
+  
+  # iterate over the number of samples
+  power <- c()
+  for(i in N){
+    # step one, find the # of mutations where
+    # it is expected to occur at least 90% of the time
+    j <- 1
+    while(j){
+      prob <- pbinom(j-1, L*i, muEffect)
+      if(prob >= .1){
+        mutEff <- j
+        break
+      }
+      j <- j+1
+    }
+    
+    # step two, find critical threshold
+    j <- 1
+    while(j){
+      pval <- 1-pbinom(j-1, mutEff, p)
+      if(pval <= signif.level){
+        Xc <- j
+        break
+      }
+      j <- j+1
+    }
+    
+    # step three, calculate power
+    prob <- 1-pbinom(Xc-1, mutEff, pEffect)
+    power <- c(power, prob) 
+  }
+  return(power)
+}
+
+ratiometric.bbd.power <- function(my.alpha, my.beta, 
+                                  N, mu,
+                                  L=1500,r=.02,
+                                  signif.level=5e-6){
+  # figure out what the ratio-metric probability is from
+  # the alpha and beta parameters
+  p <- my.alpha / (my.alpha + my.beta)
+  # figure out the target mutation rate for effect size is
+  muEffect <- 1 - ((1-mu)^(L) - r)^(1/L)
+  # Calculate the discrepancy between the background and
+  # target effect size
+  muDiff <- muEffect - mu
+  # given the mutation rates calculate the target effect
+  # size for a ratio-metric method
+  pEffect <- (mu*p + muDiff) / muEffect
+  
+  # iterate over the number of samples
+  power <- c()
+  for(i in N){
+    # step one, find the # of mutations where
+    # it is expected to occur at least 90% of the time
+    j <- 1
+    while(j){
+      prob <- pbinom(j-1, L*i, muEffect)
+      if(prob >= .1){
+        mutEff <- j
+        break
+      }
+      j <- j+1
+    }
+    
+    # step two, find critical threshold
+    j <- 1
+    while(j){
+      pval <- 1-pbetabinom.ab(j-1, mutEff, my.alpha, my.beta)
+      if(pval <= signif.level){
+        Xc <- j
+        break
+      }
+      j <- j+1
+    }
+    
+    # step three, calculate power
+    prob <- 1-pbinom(Xc-1, mutEff, pEffect)
+    power <- c(power, prob) 
+  }
+  return(power)
+}
+
 #############################
 # Convert a rate and coefficient
 # of variation parameter into
@@ -202,7 +296,7 @@ bbdRequiredSampleSize <- function(desired.power, mu, cv, possible.samp.sizes,
 }
 
 #' Calculates the smallest sample size to detect driver genes for which
-#' there is sufficient power using a binomial model.
+#' there is sufficient power using a binomial model for mutation rate.
 #' 
 #' Effect size is measures as the fraction of sample/patient cancers with a non-silent
 #' mutation in a driver gene above the background mutation rate.
@@ -226,6 +320,71 @@ binomRequiredSampleSize <- function(desired.power, mu, possible.samp.sizes,
   # return result
   result <- list(samp.size.min=binom.samp.size.min, samp.size.max=binom.samp.size.max,
                  power=power.result.binom, sample.sizes=possible.samp.sizes)
+  return(result)
+}
+
+#' Calculates the smallest sample size to detect driver genes for which
+#' there is sufficient power using a binomial model for ratio-metric features.
+#' 
+#' Effect size is measures as the fraction of sample/patient cancers with a non-silent
+#' mutation in a driver gene above the background mutation rate.
+#' 
+#' @param p the background fraction of total mutations represented by the ratio-metric feature (e.g. inactivating mutations / total)
+#' @param desired.power A floating point number indicating desired power
+#' @param possible.samp.sizes vector of possible number of cancer samples in study
+#' @param mu mutation rate per base
+#' @param effect.size fraction of samples above background mutation rate
+#' @param signif.level significance level for binomial test
+#' @param L gene length of CDS in bases for an average gene
+#' @return List containing the smallest effect size with sufficient power
+ratiometricBinomRequiredSampleSize <- function(p, desired.power, possible.samp.sizes, mu,
+                                               effect.size, signif.lvl=5e-6, L=1500){
+  # calculate power
+  power.result.ratio <- ratiometric.binom.power(p, possible.samp.sizes, mu, L, 
+                                                signif.level=signif.lvl,
+                                                r=effect.size)
+  ratiometric.samp.size.min <- possible.samp.sizes[min(which(power.result.ratio>=desired.power))]
+  ratiometric.samp.size.max <- possible.samp.sizes[max(which(power.result.ratio<desired.power))+1]
+  
+  # return result
+  result <- list(samp.size.min=ratiometric.samp.size.min, samp.size.max=ratiometric.samp.size.max,
+                 power=power.result.ratio, sample.sizes=possible.samp.sizes)
+  return(result)
+}
+
+#' Calculates the smallest sample size to detect driver genes for which
+#' there is sufficient power using a beta-binomial model for ratio-metric features.
+#' 
+#' Effect size is measures as the fraction of sample/patient cancers with a non-silent
+#' mutation in a driver gene above the background mutation rate.
+#' 
+#' @param p the background fraction of total mutations represented by the ratio-metric feature (e.g. inactivating mutations / total)
+#' @param cv the coefficient of variation for the parameter p
+#' @param desired.power A floating point number indicating desired power
+#' @param possible.samp.sizes vector of possible number of cancer samples in study
+#' @param mu mutation rate per base
+#' @param effect.size fraction of samples above background mutation rate
+#' @param signif.level significance level for binomial test
+#' @param L gene length of CDS in bases for an average gene
+#' @return List containing the smallest effect size with sufficient power
+ratiometricBbdRequiredSampleSize <- function(p, cv, desired.power, possible.samp.sizes, mu,
+                                             effect.size, signif.lvl=5e-6, L=1500){
+  # get alpha and beta parameterization
+  # for beta-binomial
+  params <- rateCvToAlphaBeta(p, cv)
+  
+  # calculate power
+  power.result.ratio <- ratiometric.bbd.power(params$alpha, params$beta, 
+                                              possible.samp.sizes,
+                                              mu, L, 
+                                              signif.level=signif.lvl,
+                                              r=effect.size)
+  ratiometric.samp.size.min <- possible.samp.sizes[min(which(power.result.ratio>=desired.power))]
+  ratiometric.samp.size.max <- possible.samp.sizes[max(which(power.result.ratio<desired.power))+1]
+  
+  # return result
+  result <- list(samp.size.min=ratiometric.samp.size.min, samp.size.max=ratiometric.samp.size.max,
+                 power=power.result.ratio, sample.sizes=possible.samp.sizes)
   return(result)
 }
 
