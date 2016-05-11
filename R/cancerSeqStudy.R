@@ -65,7 +65,8 @@ binom.power <- function(my.mu,
 
 
 #' calculates the false positives in a binomial model
-#' if there is over-diserspion
+#' for identifying significantly mutated genes if 
+#' there is over-diserspion.
 #'
 #' @param my.alpha alpha parameter for beta binomial
 #' @param my.beta beta parameter for beta binomial
@@ -102,6 +103,57 @@ binom.false.pos <- function(my.alpha, my.beta,
   return(falsePositives)
 }
 
+#' calculates the false positives in a binomial model
+#' if there is over-diserspion
+#'
+#' @param my.alpha alpha parameter for beta binomial
+#' @param my.beta beta parameter for beta binomial
+#' @param N vector of # samples to calculate power for
+#' @param mu mutation rate per base
+#' @param L gene CDS length in bases
+#' @param num.genes number of genes that are tested
+#' @param signif.level alpha level for power analysis
+ratiometric.binom.false.pos <- function(my.alpha, my.beta,
+                                        N, mu, L=1500,
+                                        num.genes=18500,
+                                        signif.level=5e-6){
+  # calculate the ratio-metric fraction from alpha and beta
+  p <- my.alpha / (my.alpha + my.beta)
+  # examine power of binomial test
+  # first find critical value based on binomial distribution
+  power <- c()
+  falsePositives <- c()
+  for(i in N){
+    # step one, find the # of mutations where
+    # it is expected to occur at least 90% of the time
+    #j <- 1
+    #while(j){
+    #  prob <- pbinom(j-1, L*i, mu)
+    #  if(prob >= .1){
+    #    mutEff <- j
+    #    break
+    #  }
+    #  j <- j+1
+    #}
+    mutEff <- ceiling(L*i*mu)
+    
+    # step one, find critical threshold
+    j <- 1
+    while(j){
+      pval <- 1-pbinom(j-1, mutEff, p)
+      if(pval <= signif.level){
+        Xc <- j
+        break
+      }
+      j <- j+1
+    }
+    
+    # step two, calculate false positives if overdispersion
+    fp <- 1 - pbetabinom.ab(Xc-1, mutEff, my.alpha, my.beta)
+    falsePositives <- c(falsePositives, num.genes*fp)
+  }
+  return(falsePositives)
+}
 
 #' calculates the power in a beta-binomial model
 #'
