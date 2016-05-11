@@ -466,6 +466,20 @@ binomPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, sam
   return(result)
 }
 
+#' Calculates the effect size of a driver gene according to a binomial model
+#' of ratio-metric features for which there is sufficient power.
+#' 
+#' Effect size is measures as the fraction of sample/patient cancers with a 
+#' mutation in a driver gene above the background mutation rate.
+#' 
+#' @param possible.effect.sizes vector of effect sizes
+#' @param desired.power A floating point number indicating desired power
+#' @param p the background fraction of total mutations represented by the ratio-metric feature (e.g. inactivating mutations / total)
+#' @param mu Mutation rate per base
+#' @param samp.size number of cancer samples in study
+#' @param signif.level significance level for binomial test
+#' @param Leff effective gene length of CDS in bases for an average gene
+#' @return List containing the smallest effect size with sufficient power
 ratiometricBinomPoweredEffectSize <- function(possible.effect.sizes, desired.power, p, mu, 
                                               samp.size, signif.level=5e-6, L=1500) {
   # calculate the power for each effect size
@@ -487,6 +501,21 @@ ratiometricBinomPoweredEffectSize <- function(possible.effect.sizes, desired.pow
   return(result)
 }
 
+#' Calculates the effect size of a driver gene according to a beta-binomial model
+#' of ratio-metric features for which there is sufficient power.
+#' 
+#' Effect size is measures as the fraction of sample/patient cancers with a 
+#' mutation in a driver gene above the background mutation rate.
+#' 
+#' @param possible.effect.sizes vector of effect sizes
+#' @param desired.power A floating point number indicating desired power
+#' @param p the background fraction of total mutations represented by the ratio-metric feature (e.g. inactivating mutations / total)
+#' @param cv the coefficient of variation for the parameter p
+#' @param mu Mutation rate per base
+#' @param samp.size number of cancer samples in study
+#' @param signif.level significance level for binomial test
+#' @param Leff effective gene length of CDS in bases for an average gene
+#' @return List containing the smallest effect size with sufficient power
 ratiometricBbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, p, cv, mu, 
                                             samp.size, signif.level=5e-6, L=1500) {
   # figure out alpha/beta for beta-binomial
