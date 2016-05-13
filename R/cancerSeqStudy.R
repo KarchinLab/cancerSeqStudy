@@ -5,6 +5,7 @@ if ("getopt" %in% rownames(installed.packages())){
   spec <- matrix(c(
     'mcores', 'c', 1, 'integer',
     'output', 'o', 1, 'character',
+    'ratioMetric', 'r', 2, 'double',
     'help', 'h', 0, 'logical'
   ), byrow=TRUE, ncol=4)
   opt = getopt(spec)
@@ -155,7 +156,8 @@ ratiometric.binom.false.pos <- function(my.alpha, my.beta,
   return(falsePositives)
 }
 
-#' calculates the power in a beta-binomial model
+#' calculates the power in a beta-binomial model for
+#' significantly mutated genes.
 #'
 #' @param my.alpha alpha parameter for beta binomial
 #' @param my.beta beta parameter for beta binomial
@@ -197,7 +199,7 @@ bbd.power <- function(my.alpha, my.beta,
 }
 
 ratiometric.binom.power <- function(p, N, mu,
-                                    L=1500,r=.02,
+                                    L=1500, r=.02,
                                     signif.level=5e-6){
   # figure out the target mutation rate for effect size is
   muEffect <- 1 - ((1-mu)^(L) - r)^(1/L)
@@ -635,6 +637,29 @@ binomFullAnalysis <- function(mu, Leff, signif.level, effect.size,
   power.result.binom <- binom.power(mu, samp.sizes, Leff, 
                                     signif.level=signif.level,
                                     r=effect.size)
+  binom.samp.size.min <- samp.sizes[min(which(power.result.binom>=desired.power))]
+  binom.samp.size.max <- samp.sizes[max(which(power.result.binom<desired.power))+1]
+  
+  # record all power measurements
+  tmp.df <- data.frame(sample.size=samp.sizes)
+  tmp.df["Power"] <- power.result.binom
+  tmp.df['sample min'] <- binom.samp.size.min
+  tmp.df['sample max'] <- binom.samp.size.max
+  tmp.df['CV'] <- 0
+  tmp.df['signif.level'] <- signif.level
+  tmp.df['effect.size'] <- effect.size
+  tmp.df['mutation.rate'] <- mu
+  tmp.df["FP"] <- NA
+  
+  return(tmp.df)
+}
+
+ratiometricBinomFullAnalysis <- function(mu, Leff, signif.level, effect.size, 
+                                         desired.power, samp.sizes){
+  # calculate power
+  power.result.binom <- ratiometric.binom.power(mu, samp.sizes, Leff, 
+                                                signif.level=signif.level,
+                                                r=effect.size)
   binom.samp.size.min <- samp.sizes[min(which(power.result.binom>=desired.power))]
   binom.samp.size.max <- samp.sizes[max(which(power.result.binom<desired.power))+1]
   
