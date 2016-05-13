@@ -25,17 +25,18 @@ suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(parallel))
 
 #' calculates the power in a binomial power model
+#' for significantly mutated genes
 #'
 #' @param my.mu per base rate of mutation for binomial
 #' @param N vector of sample sizes
 #' @param r effect size for power analysis
 #' @param signif.level alpha level for power analysis
 #' @return vector containing power for each sample size
-binom.power <- function(my.mu,
-                        N,
-                        Leff=1500*3/4,
-                        r=.02,
-                        signif.level=5e-6){
+smg.binom.power <- function(my.mu,
+                            N,
+                            Leff=1500*3/4,
+                            r=.02,
+                            signif.level=5e-6){
   # examine power of binomial test
   # first find critical value based on binomial distribution
   # Calculate power for various sizes with different effects
@@ -75,10 +76,10 @@ binom.power <- function(my.mu,
 #' @param Leff effective gene length in bases
 #' @param num.genes number of genes that are tested
 #' @param signif.level alpha level for power analysis
-binom.false.pos <- function(my.alpha, my.beta,
-                            N, Leff=1500*3/4,
-                            num.genes=18500,
-                            signif.level=5e-6){
+smg.binom.false.pos <- function(my.alpha, my.beta,
+                                N, Leff=1500*3/4,
+                                num.genes=18500,
+                                signif.level=5e-6){
   # calculate mutation rate from alpha/beta
   my.mu <- my.alpha / (my.alpha + my.beta)
   # examine power of binomial test
@@ -165,11 +166,11 @@ ratiometric.binom.false.pos <- function(my.alpha, my.beta,
 #' @param Leff effective gene length in bases
 #' @param r effect size for power analysis
 #' @param signif.level alpha level for power analysis
-bbd.power <- function(my.alpha, my.beta,
-                      N,
-                      Leff=1500*3/4,
-                      r=.02,
-                      signif.level=5e-6){
+smg.bbd.power <- function(my.alpha, my.beta,
+                          N,
+                          Leff=1500*3/4,
+                          r=.02,
+                          signif.level=5e-6){
   # calc the mutation rate from alpha/beta
   my.mu <- my.alpha / (my.alpha + my.beta)
   # examine power of binomial test
@@ -329,15 +330,15 @@ rateCvToAlphaBeta <- function(rate, cv) {
 #' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
-bbdRequiredSampleSize <- function(desired.power, mu, cv, possible.samp.sizes, 
-                                  effect.size, signif.level=5e-6, Leff=1500*3/4){
+smgBbdRequiredSampleSize <- function(desired.power, mu, cv, possible.samp.sizes, 
+                                     effect.size, signif.level=5e-6, Leff=1500*3/4){
   # get alpha and beta parameterization
   # for beta-binomial
   params <- rateCvToAlphaBeta(mu, cv)
   
   # calc power
-  power.result.bbd <- bbd.power(params$alpha, params$beta, possible.samp.sizes, Leff, 
-                                signif.level=signif.level, r=effect.size)
+  power.result.bbd <- smg.bbd.power(params$alpha, params$beta, possible.samp.sizes, Leff, 
+                                    signif.level=signif.level, r=effect.size)
   
   # find min/max samples to achieve desired power
   bbd.samp.size.min <- possible.samp.sizes[min(which(power.result.bbd>=desired.power))]
@@ -362,12 +363,12 @@ bbdRequiredSampleSize <- function(desired.power, mu, cv, possible.samp.sizes,
 #' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
-binomRequiredSampleSize <- function(desired.power, mu, possible.samp.sizes,
-                                    effect.size, signif.level=5e-6, Leff=1500*3/4){
+smgBinomRequiredSampleSize <- function(desired.power, mu, possible.samp.sizes,
+                                       effect.size, signif.level=5e-6, Leff=1500*3/4){
   # calculate power
-  power.result.binom <- binom.power(mu, possible.samp.sizes, Leff, 
-                                    signif.level=signif.level,
-                                    r=effect.size)
+  power.result.binom <- smg.binom.power(mu, possible.samp.sizes, Leff, 
+                                        signif.level=signif.level,
+                                        r=effect.size)
   binom.samp.size.min <- possible.samp.sizes[min(which(power.result.binom>=desired.power))]
   binom.samp.size.max <- possible.samp.sizes[max(which(power.result.binom<desired.power))+1]
   
@@ -448,7 +449,8 @@ ratiometricBbdRequiredSampleSize <- function(p, cv, desired.power, possible.samp
 #####################################
 
 #' Calculates the smallest effect size in a driver gene for which
-#' there is sufficient power using a beta-binomial model.
+#' there is sufficient power using a significantly mutated gene
+#' approach with a beta-binomial model.
 #' 
 #' Effect size is measures as the fraction of sample/patient cancers with a non-silent
 #' mutation in a driver gene above the background mutation rate.
@@ -461,8 +463,8 @@ ratiometricBbdRequiredSampleSize <- function(p, cv, desired.power, possible.samp
 #' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
-bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, samp.size, 
-                                 signif.level=5e-6, Leff=1500*3/4) {
+smgBbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, samp.size, 
+                                    signif.level=5e-6, Leff=1500*3/4) {
   # get alpha and beta parameterization
   # for beta-binomial
   params <- rateCvToAlphaBeta(mu, cv)
@@ -471,8 +473,8 @@ bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, s
   pow.vec <- c()
   for(effect.size in possible.effect.sizes){
     # calc power
-    pow <- bbd.power(params$alpha, params$beta, samp.size, Leff, 
-                     signif.level=signif.level, r=effect.size)
+    pow <- smg.bbd.power(params$alpha, params$beta, samp.size, Leff, 
+                         signif.level=signif.level, r=effect.size)
     pow.vec <- c(pow.vec, pow)
   }
   
@@ -486,8 +488,8 @@ bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, s
   return(result)
 }
 
-#' Calculates the effect size of a driver gene according to a binomial for which
-#' there is sufficient power.
+#' Calculates the minimum effect size (with sufficient power) of a driver gene according to a binomial model 
+#' for significantly mutated genes.
 #' 
 #' Effect size is measures as the fraction of sample/patient cancers with a non-silent
 #' mutation in a driver gene above the background mutation rate.
@@ -499,14 +501,14 @@ bbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, cv, s
 #' @param signif.level significance level for binomial test
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
-binomPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, samp.size, 
-                                   signif.level=5e-6, Leff=1500*3/4) {
+smgBinomPoweredEffectSize <- function(possible.effect.sizes, desired.power, mu, samp.size, 
+                                      signif.level=5e-6, Leff=1500*3/4) {
   # calculate the power for each effect size
   pow.vec <- c()
   for(effect.size in possible.effect.sizes){
-    pow <- binom.power(mu, samp.size, Leff, 
-                       signif.level=signif.level,
-                       r=effect.size)
+    pow <- smg.binom.power(mu, samp.size, Leff, 
+                           signif.level=signif.level,
+                           r=effect.size)
     pow.vec <- c(pow.vec, pow)
   }
   
@@ -599,11 +601,11 @@ ratiometricBbdPoweredEffectSize <- function(possible.effect.sizes, desired.power
 # Analyze power and false positives
 # when using a beta-binomial model
 #############################
-bbdFullAnalysis <- function(mu, cv, Leff, signif.level, effect.size, 
-                            desired.power, samp.sizes){
+smgBbdFullAnalysis <- function(mu, cv, Leff, signif.level, effect.size, 
+                               desired.power, samp.sizes){
 
   # find the power and numer of samples needed for a desired power
-  powerResult <- bbdRequiredSampleSize(desired.power, mu, cv, samp.sizes, 
+  powerResult <- smgBbdRequiredSampleSize(desired.power, mu, cv, samp.sizes, 
                                        effect.size, signif.level, Leff)
   bbd.samp.size.min <- powerResult$samp.size.min
   bbd.samp.size.max <- powerResult$samp.size.max
@@ -614,8 +616,8 @@ bbdFullAnalysis <- function(mu, cv, Leff, signif.level, effect.size,
   params <- rateCvToAlphaBeta(mu, cv)
   
   # find expected number of false positives
-  fp.result <- binom.false.pos(params$alpha, params$beta, samp.sizes, Leff, 
-                               signif.level=signif.level)
+  fp.result <- smg.binom.false.pos(params$alpha, params$beta, samp.sizes, Leff, 
+                                   signif.level=signif.level)
   
   # save binomial data
   tmp.df <- data.frame(sample.size=samp.sizes)
@@ -665,12 +667,12 @@ ratiometricBbdFullAnalysis <- function(p, cv, mu, L, signif.level, effect.size,
   return(tmp.df)
 }
 
-binomFullAnalysis <- function(mu, Leff, signif.level, effect.size, 
-                              desired.power, samp.sizes){
+smgBinomFullAnalysis <- function(mu, Leff, signif.level, effect.size, 
+                                 desired.power, samp.sizes){
   # calculate power
-  power.result.binom <- binom.power(mu, samp.sizes, Leff, 
-                                    signif.level=signif.level,
-                                    r=effect.size)
+  power.result.binom <- smg.binom.power(mu, samp.sizes, Leff, 
+                                        signif.level=signif.level,
+                                        r=effect.size)
   binom.samp.size.min <- samp.sizes[min(which(power.result.binom>=desired.power))]
   binom.samp.size.max <- samp.sizes[max(which(power.result.binom<desired.power))+1]
   
@@ -768,13 +770,13 @@ runSmgAnalysis <- function(mu, effect.size, signif.level,
   result.df <- data.frame()
   for (mycv in possible.cvs){   
     # calculate false positives and power
-    tmp.df <- bbdFullAnalysis(mu, mycv, Leff, signif.level, effect.size, 
+    tmp.df <- smgBbdFullAnalysis(mu, mycv, Leff, signif.level, effect.size, 
                               desired.power, samp.sizes)
     result.df <- rbind(result.df, tmp.df)
   }
   
   # save binomial data
-  tmp.df <- binomFullAnalysis(mu, Leff, signif.level, effect.size, desired.power, samp.sizes)
+  tmp.df <- smgBinomFullAnalysis(mu, Leff, signif.level, effect.size, desired.power, samp.sizes)
   result.df <- rbind(result.df, tmp.df)
   
   return(result.df)
