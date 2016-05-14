@@ -24,9 +24,6 @@ suppressPackageStartupMessages(library(VGAM))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(parallel))
 
-# load other R files
-source("smg.R")
-source("ratioMetric.R")
 
 #############################
 # Convert a rate and coefficient
@@ -260,6 +257,10 @@ runRatiometricAnalysis <- function(p, mu, effect.size, signif.level,
 
 # Run as a script if arguments provided
 if (!is.null(opt$ARGS)){
+  # load other R files
+  source("smg.R")
+  source("ratioMetric.R")
+  
   #############################
   # define the model params
   #############################

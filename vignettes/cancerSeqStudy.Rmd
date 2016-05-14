@@ -1,21 +1,27 @@
 ---
-title: "Statistical analysis of significantly mutated genes"
+title: "Statistical analysis of cancer driver gene prediction"
 author: "Collin Tokheim"
 date: "`r Sys.Date()`"
 output: rmarkdown::pdf_document
 vignette: >
-  %\VignetteIndexEntry{Statistical analysis of significantly mutated genes}
+  %\VignetteIndexEntry{Statistical analysis of predicting cancer driver genes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes (SMG) fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. Analysis not accounting for the uncertainty in mutation rate yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
+Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes (SMG) fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. However, recent methods have taken an alternative approach known as "ratio-metric" method. Ratio-metric methods examine specific compositions of mutations normalized by the total number of mutations occurring in the gene. Regardless of methodology, analysis not accounting for the uncertainty in mutation parameters yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
 
 ## Relevant parameters
 
 ### Significantly mutated gene (SMG)
 
 SMG methods rely on estimating a background mutation rate (BMR), which in this package is represented by the parameter mu or "rate". A simple model for the accumulation of non-silent mutations in genes uses a binomial distribution that has *fixed* rate over the length of the gene. The `L` parameter controls the number of bases for an average gene (for simplicity genes have the same length). Because approximately 3/4 of point mutations lead to non-silent changes, an effective length `Leff=3/4*L` (roughly this fraction is expected purely based on the codon table). The mutation rate varies substantially depending on the particular cancer type of interest, so the mutation rate should be varied accordingly. An additional complexity is the mutation rate varies substantially over genes, with gene expression and replication timing correlated with mutation rate. To compensate for this variation above expected purely based on the aggregate samples in the tumor type, Lawrence *et al.* proposed the nominal tumor type mutation rate should be adjusted by a gene specfic multiplication factor `fg=3.9`, representing the 90th percentile of genes. Internally cancerSeqStudy does not apply this multiplication factor, so users should adjust for this prior to input. 
+
+### Ratio-metric approach
+
+In contrast to SMGs, ratio-metric methods focuse on particular types of mutations occurring in a gene. For example, this could be the ammount of "inactivating" mutations (nonsense, splice site, or frameshift indels). By examining somatic mutations, there will be a certain proportion `P` of total mutations that will be those of interest. Using the same parameterizations for gene length `L` and mutation rate mu as in the SMG analysis, the behavior of genes with high values of `P` can be analyzed.
+
+### Parameter uncertainty
 
 The above scenario reflects a known fixed mutation rate. Realistically, however, the background mutation rate is estimated and can be uncertain due to both technical and biological factors. To account for uncertainty, a certain coefficient of variation (CV) for the mutation rate can be allowed using a beta-binomial distribution. To move from mutation rate and CV to $$\alpha$$ and $$\beta$$ (typical parameterization of a beta-binomial), the `rateCvToAlphaBeta` function is used.
 
@@ -50,7 +56,7 @@ In the situation where there is additional unaccounted variability in the mutati
 
 ## Sample Size Calculation
 
-An important aspect of designing cancer exome seqeuncing studies is to determine how many cancer samples are required for sufficient power to detect significantly mutated genes present at a certain prevalence.
+An important aspect of designing cancer exome seqeuncing studies is to determine how many cancer samples are required for sufficient power to detect driver genes present at a certain prevalence.
 
 ### Assuming a known mutation rate
 
@@ -66,7 +72,7 @@ eff.size <- .02  # fraction of samples above background
 mut.rate <- 1e-5
 alpha.level <- 5e-6  # roughly a bonferoni corrected significance level
 
-binomRequiredSampleSize(desired.power, mut.rate, samp.sizes, eff.size, alpha.level)
+smgBinomRequiredSampleSize(desired.power, mut.rate, samp.sizes, eff.size, alpha.level)
 ```
 
 ### Accounting for uncertain mutation rate
@@ -77,7 +83,7 @@ Adjusting for uncertainty in mutation rate better represents the actual required
 # setup parameters
 cv <- .2  # coefficient of variation for mutation rate
 
-bbdRequiredSampleSize(desired.power, mut.rate, cv, samp.sizes, eff.size)
+smgBbdRequiredSampleSize(desired.power, mut.rate, cv, samp.sizes, eff.size)
 ```
 
 Notice the minimum required samples raised from 1,500 to 3,500 by accounting for uncertainty of mutation rate with a coefficient of variation of .2.
@@ -91,7 +97,7 @@ If you already have a certain number of samples, often it is helpful to understa
 possible.eff.sizes <- seq(.01, .2, by=.01)  # fraction of samples above background
 num.samples <- 1000  # number of samples in study
 
-bbdPoweredEffectSize(possible.eff.sizes, desired.power, mut.rate, cv, num.samples, alpha.level)
+smgBbdPoweredEffectSize(possible.eff.sizes, desired.power, mut.rate, cv, num.samples, alpha.level)
 ```
 
 In this example, drivers present in 4% of samples above background mutation rate have sufficient power to be detected.
@@ -100,7 +106,7 @@ In this example, drivers present in 4% of samples above background mutation rate
 
 ```{r, fig.show='hold'}
 bbd.params <- rateCvToAlphaBeta(mut.rate, cv)
-binom.false.pos(bbd.params$alpha, bbd.params$beta, samp.sizes)
+smg.binom.false.pos(bbd.params$alpha, bbd.params$beta, samp.sizes)
 ```
 
 Here, the total number of genes (`num.genes`) was left at the default of 18,500, and likewise for the significance level (5e-6) and effective gene length (1500*3/4).
