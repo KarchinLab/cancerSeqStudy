@@ -6,6 +6,7 @@ if ("getopt" %in% rownames(installed.packages())){
     'mcores', 'c', 1, 'integer',
     'output', 'o', 1, 'character',
     'ratioMetric', 'r', 2, 'double',
+    'driverFrac', 'd', 2, 'double',
     'help', 'h', 0, 'logical'
   ), byrow=TRUE, ncol=4)
   opt = getopt(spec)
@@ -43,7 +44,6 @@ rateCvToAlphaBeta <- function(rate, cv) {
   return(list(alpha=my.alpha, beta=my.beta))
 }
 
-
 #############################
 # Analyze power and false positives
 # when using a beta-binomial model
@@ -53,7 +53,7 @@ smgBbdFullAnalysis <- function(mu, cv, Leff, signif.level, effect.size,
 
   # find the power and numer of samples needed for a desired power
   powerResult <- smgBbdRequiredSampleSize(desired.power, mu, cv, samp.sizes, 
-                                       effect.size, signif.level, Leff)
+                                          effect.size, signif.level, Leff)
   bbd.samp.size.min <- powerResult$samp.size.min
   bbd.samp.size.max <- powerResult$samp.size.max
   power.result.bbd <- powerResult$power
@@ -82,11 +82,11 @@ smgBbdFullAnalysis <- function(mu, cv, Leff, signif.level, effect.size,
 
 
 ratiometricBbdFullAnalysis <- function(p, cv, mu, L, signif.level, effect.size, 
-                                       desired.power, samp.sizes){
+                                       desired.power, samp.sizes, Df){
 
   # find the power and numer of samples needed for a desired power
   powerResult <- ratiometricBbdRequiredSampleSize(p, cv, desired.power, samp.sizes, mu,
-                                                  effect.size, signif.level, L)
+                                                  effect.size, Df, signif.level, L)
   bbd.samp.size.min <- powerResult$samp.size.min
   bbd.samp.size.max <- powerResult$samp.size.max
   power.result.bbd <- powerResult$power
@@ -108,7 +108,8 @@ ratiometricBbdFullAnalysis <- function(p, cv, mu, L, signif.level, effect.size,
   tmp.df['signif.level'] <- signif.level
   tmp.df['effect.size'] <- effect.size
   tmp.df['mutation.rate'] <- mu
-  tmp.df["Ratio-metric.P"] <- p
+  tmp.df["Ratio-metric P"] <- p
+  tmp.df["Driver fraction"] <- Df
   tmp.df["FP"] <- fp.result
   
   return(tmp.df)
@@ -142,10 +143,10 @@ smgBinomFullAnalysis <- function(mu, Leff, signif.level, effect.size,
 }
 
 ratiometricBinomFullAnalysis <- function(p, mu, L, signif.level, effect.size, 
-                                         desired.power, samp.sizes){
+                                         desired.power, samp.sizes, Df){
   # calculate power
   power.result.binom <- ratiometric.binom.power(p, samp.sizes, mu, L, 
-                                                signif.level=signif.level,
+                                                Df=Df, signif.level=signif.level,
                                                 r=effect.size)
   binom.samp.size.min <- samp.sizes[min(which(power.result.binom>=desired.power))]
   binom.samp.size.max <- samp.sizes[max(which(power.result.binom<desired.power))+1]
@@ -159,7 +160,8 @@ ratiometricBinomFullAnalysis <- function(p, mu, L, signif.level, effect.size,
   tmp.df['signif.level'] <- signif.level
   tmp.df['effect.size'] <- effect.size
   tmp.df['mutation.rate'] <- mu
-  tmp.df["Ratio-metric.P"] <- p
+  tmp.df["Ratio-metric P"] <- p
+  tmp.df["Driver fraction"] <- Df
   tmp.df["FP"] <- NA
   
   return(tmp.df)
@@ -185,7 +187,7 @@ runSmgAnalysisList <- function(x, samp.sizes,
 }
 
 runRatiometricAnalysisList <- function(x, samp.sizes, 
-                                       desired.power=.9, L=1500, 
+                                       Df=1.0, desired.power=.9, L=1500, 
                                        possible.cvs=c()){
   # unpack the parameters
   myp <- x[1]
@@ -195,7 +197,7 @@ runRatiometricAnalysisList <- function(x, samp.sizes,
   
   # run analysis
   result.df <- runRatiometricAnalysis(myp, mymu, myeffect.size, myalpha.level,
-                                      samp.sizes, desired.power, L, possible.cvs)
+                                      samp.sizes, desired.power, L, Df, possible.cvs)
 
   return(result.df)
 }
@@ -204,11 +206,11 @@ runRatiometricAnalysisList <- function(x, samp.sizes,
 #' rate, effect.size, and significance level. The purpose of this function is parallelized
 #' code running over a list of parameters. If you are not parallelizing, then use the 
 #' runAnalysis function.
-runAnalysisList <- function(x, analysisType="smg", Leff=1500*3/4, L=1500, ...){ 
+runAnalysisList <- function(x, analysisType="smg", Leff=1500*3/4, L=1500, Df=1.0, ...){ 
   if (analysisType=="smg"){
     result <- runSmgAnalysisList(x, Leff=Leff, ...) 
   } else{
-    result <- runRatiometricAnalysisList(x, L=L, ...) 
+    result <- runRatiometricAnalysisList(x, L=L, Df=Df, ...) 
   }
   return(result)
 }
@@ -222,7 +224,7 @@ runSmgAnalysis <- function(mu, effect.size, signif.level,
   for (mycv in possible.cvs){   
     # calculate false positives and power
     tmp.df <- smgBbdFullAnalysis(mu, mycv, Leff, signif.level, effect.size, 
-                              desired.power, samp.sizes)
+                                 desired.power, samp.sizes)
     result.df <- rbind(result.df, tmp.df)
   }
   
@@ -236,19 +238,20 @@ runSmgAnalysis <- function(mu, effect.size, signif.level,
 #' Runs the entire power and false positive analysis pipeline.
 runRatiometricAnalysis <- function(p, mu, effect.size, signif.level,
                                    samp.sizes, desired.power=.9, 
-                                   L=1500, possible.cvs=c()){
+                                   L=1500, Df=1.0, possible.cvs=c()){
   # run beta-binomial model
   result.df <- data.frame()
   for (mycv in possible.cvs){   
     # calculate false positives and power
     tmp.df <- ratiometricBbdFullAnalysis(p, mycv, mu, L, signif.level, effect.size, 
-                                         desired.power, samp.sizes)
+                                         desired.power, samp.sizes, Df)
     result.df <- rbind(result.df, tmp.df)
   }
   
   # save binomial data
   tmp.df <- ratiometricBinomFullAnalysis(p, mu, L, signif.level, 
-                                         effect.size, desired.power, samp.sizes)
+                                         effect.size, desired.power, 
+                                         samp.sizes, Df)
   result.df <- rbind(result.df, tmp.df)
   
   return(result.df)
@@ -307,6 +310,10 @@ if (!is.null(opt$ARGS)){
   possible.cvs <- c(.05, .1, .2)  # coefficient of variation for mutation rate per base
   effect.sizes <- c(.01, .02, .05)  # fraction of samples above background
   alpha.levels <- c(5e-6)  # list for level of significance
+
+  # fraction of driver mutations being a certain
+  # category of interest for ratio-metric methods
+  driver.frac <- opt$driverFrac
   
   # setting up the sample sizes to check
   N <- 25000
@@ -338,7 +345,7 @@ if (!is.null(opt$ARGS)){
   ############################
   result.list <- mclapply(param.list, runAnalysisList, mc.cores=opt$mcores,
                           analysisType=cmdType, samp.sizes=samp.sizes, 
-                          desired.power=desired.power,
+                          desired.power=desired.power, Df=driver.frac,
                           Leff=Leff, L=L, possible.cvs=possible.cvs)
   result.df <- do.call("rbind", result.list)
   
