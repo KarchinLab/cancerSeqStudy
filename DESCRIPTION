@@ -1,6 +1,6 @@
 Package: cancerSeqStudy
 Title: Power and False Positive Analysis of Cancer Sequencing Studies
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: person("Collin", "Tokheim", email =
  "ctokheim@jhu.edu", role = c("aut", "cre"))
 Description: This package examines statistical power and false positives for
