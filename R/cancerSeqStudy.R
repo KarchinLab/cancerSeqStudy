@@ -24,7 +24,6 @@ suppressPackageStartupMessages(library(VGAM))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(parallel))
 
-
 #############################
 # Convert a rate and coefficient
 # of variation parameter into
@@ -255,11 +254,34 @@ runRatiometricAnalysis <- function(p, mu, effect.size, signif.level,
   return(result.df)
 }
 
+#' Utility function to get location of script when
+#' executing Rscript.
+thisfile <- function() {
+    cmdArgs = commandArgs(trailingOnly = FALSE)
+    needle = "--file="
+    match = grep(needle, cmdArgs)
+    if (length(match) > 0) {
+        # Rscript
+        return(normalizePath(sub(needle, "", cmdArgs[match])))
+    } else {
+        ls_vars = ls(sys.frames()[[1]])
+        if ("fileName" %in% ls_vars) {
+            # Source'd via RStudio
+            return(normalizePath(sys.frames()[[1]]$fileName)) 
+        } else {
+            # Source'd via R console
+            return(normalizePath(sys.frames()[[1]]$ofile))
+        }
+    }
+}
+
 # Run as a script if arguments provided
 if (!is.null(opt$ARGS)){
   # load other R files
-  source("smg.R")
-  source("ratioMetric.R")
+  script.path <- thisfile()
+  script.dir <- dirname(script.path)
+  source(file.path(script.dir, "smg.R"))
+  source(file.path(script.dir, "ratioMetric.R"))
   
   #############################
   # define the model params
