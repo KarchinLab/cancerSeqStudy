@@ -43,7 +43,6 @@ smg.binom.power <- function(my.mu,
   muEffect <- 1 - ((1-my.mu)^Leff - r)^(1/Leff)
   power <- c()
   falsePositives <- c()
-  #for(i in seq(by, N, by=by)){
   for(i in N){
     # step one, find critical threshold
     j <- 1
@@ -105,8 +104,8 @@ smg.binom.false.pos <- function(my.alpha, my.beta,
   return(falsePositives)
 }
 
-#' calculates the false positives in a binomial model
-#' if there is over-diserspion
+#' calculates the false positives for a binomial model of
+#' a ratio-metric feature.
 #'
 #' @param my.alpha alpha parameter for beta binomial
 #' @param my.beta beta parameter for beta binomial
@@ -199,6 +198,15 @@ smg.bbd.power <- function(my.alpha, my.beta,
   return(power)
 }
 
+#' calculates the power in a binomial power model
+#' for ratio-metric approach
+#'
+#' @param p background proportion of total mutations falling into specific category
+#' @param N vector of sample sizes
+#' @param mu per base rate of mutation 
+#' @param r effect size for power analysis
+#' @param signif.level alpha level for power analysis
+#' @return vector containing power for each sample size
 ratiometric.binom.power <- function(p, N, mu,
                                     L=1500, r=.02,
                                     signif.level=5e-6){
@@ -244,9 +252,22 @@ ratiometric.binom.power <- function(p, N, mu,
   return(power)
 }
 
+#' Calculates the power in a ratio-metric approach using 
+#' a beta-binomial power model.
+#' 
+#' The alpha and beta parameterize a proportion out of the
+#' total mutations in a gene, rather than a mutation rate per base.
+#'
+#' @param my.alpha alpha parameter for beta binomial
+#' @param my.beta beta parameter for beta binomial
+#' @param N vector of sample sizes
+#' @param mu per base rate of mutation 
+#' @param r effect size for power analysis
+#' @param signif.level alpha level for power analysis
+#' @return vector containing power for each sample size
 ratiometric.bbd.power <- function(my.alpha, my.beta, 
                                   N, mu,
-                                  L=1500,r=.02,
+                                  L=1500, r=.02,
                                   signif.level=5e-6){
   # figure out what the ratio-metric probability is from
   # the alpha and beta parameters
