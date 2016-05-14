@@ -1,5 +1,4 @@
 suppressPackageStartupMessages(library(VGAM))
-suppressPackageStartupMessages(library(reshape2))
 
 ##################################
 # Power calculatations
