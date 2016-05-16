@@ -145,7 +145,7 @@ smgBinomFullAnalysis <- function(mu, Leff, signif.level, effect.size,
 ratiometricBinomFullAnalysis <- function(p, mu, L, signif.level, effect.size, 
                                          desired.power, samp.sizes, Df){
   # calculate power
-  power.result.binom <- ratiometric.binom.power(p, samp.sizes, mu, L, 
+  power.result.binom <- ratiometric.binom.power(p, samp.sizes, mu, L=L, 
                                                 Df=Df, signif.level=signif.level,
                                                 r=effect.size)
   binom.samp.size.min <- samp.sizes[min(which(power.result.binom>=desired.power))]
@@ -317,7 +317,7 @@ if (!is.null(opt$ARGS)){
   
   # setting up the sample sizes to check
   N <- 25000
-  by.step <- 25
+  by.step <- 10
   samp.sizes <- seq(by.step, N, by=by.step)  # grid of sample sizes to check
   
   ##################################
