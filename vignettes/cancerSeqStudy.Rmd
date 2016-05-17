@@ -48,7 +48,7 @@ Statistical power calculations involve several relevant parameters, where the la
 * sample size
 * effect size
 
-The `*RequiredSampleSize` functions (\*="bbd" or "binom") calculate the needed number of samples to achieve a desired power for an effect size at a given significance level. Here, effect size is always the fraction of samples above the background mutation rate (BMR). So .02 represents mutated in 2% additional samples above expected from BMR.  While the `*PoweredEffectSize` reports the effect size for wich there is sufficient power at a given sample size.
+The `*RequiredSampleSize` functions (\*="bbd" or "binom") calculate the needed number of samples to achieve a desired power for an effect size at a given significance level. Here, effect size is always the fraction of samples above the background mutation rate (BMR). So .02 represents mutated in 2% additional samples above expected from BMR.  While the `*PoweredEffectSize` reports the effect size for wich there is sufficient power at a given sample size. Lastly, `*.power` functions (\*= "smg.binom", "smg.bbd", "ratiometric.binom", or "ratiometric.bbd") solve for statistical power based on a given sample size and effect size.
 
 ### Expected false positives
 
@@ -136,21 +136,23 @@ num.cores <- 1  # increase on multi-core computer to run faster!!!
 #############################
 # define the model params
 #############################
-# long list of mutation rates to be evaluated
-rate <- c(.1e-6, .2e-6, .3e-6, .4e-6, .5e-6, .7e-6, .8e-6, 1e-6, 1.25e-6, 1.5e-6, 
-          1.75e-6, 2e-6, 2.25e-6, 2.5e-6, 2.75e-6, 3e-6, 3.5e-6, 4e-6, 4.5e-6, 5e-6, 
-          5.5e-6, 6e-6, 6.5e-6, 7e-6, 7.5e-6, 8e-6, 8.5e-6, 9e-6, 10e-6, 11e-6, 12e-6)
+# whether to evaluate a SMG or ratio-metric approach
+cmdType <- "smg"  # alternative is "ratio-metric"
+
+# long list of rates to be evaluated
+rate <- c(.1e-6, .2e-6, .3e-6, .4e-6, .5e-6, .7e-6, .8e-6, 1e-6, 1.25e-6, 1.5e-6, 1.75e-6, 2e-6, 2.25e-6, 2.5e-6, 2.75e-6, 3e-6, 3.5e-6, 4e-6,
+          4.5e-6, 5e-6, 5.5e-6, 6e-6, 6.5e-6, 7e-6, 7.5e-6, 8e-6, 8.5e-6, 9e-6, 10e-6, 11e-6, 12e-6)
 fg <- 3.9  # an adjustment factor that lawrence et al used for variable gene length
 rate <- fg*rate  # nominal rates are adjusted (will have to adjust back after analysis is done)
 
 # model parameters
-nonsilentFactor <- 3/4  # roughly the fraction of mutations that are non-silent
+nonsilentFactor <- 3/4  # roughly the fraction of non-silent mutations
 L <- 1500  # same length as used in lawrence et al. paper
 Leff <- L * nonsilentFactor
 desired.power <- .9  # aka 90% power
 possible.cvs <- c(.05, .1, .2)  # coefficient of variation for mutation rate per base
 effect.sizes <- c(.01, .02, .05)  # fraction of samples above background
-alpha.levels <- c(1e-4, 5e-6)  # level of significance
+alpha.levels <- c(5e-6)  # list for level of significance
 
 # setting up the sample sizes to check
 N <- 25000
@@ -167,17 +169,22 @@ for (i in 1:length(rate)){
   for (effect.size in effect.sizes){
     # loop over alpha levels
     for (alpha.level in alpha.levels){
-      param.list[[counter]] <- c(rate[i], effect.size, alpha.level)
+      if(cmdType=="smg"){
+        param.list[[counter]] <- c(rate[i], effect.size, alpha.level)
+      }else {
+        param.list[[counter]] <- c(opt$ratioMetric, rate[i], effect.size, alpha.level)
+      }
       counter <- counter + 1
     }
   }
 }
-
+  
 ############################
 # run analysis
 ############################
 result.list <- mclapply(param.list, runAnalysisList, mc.cores=num.cores,
-                        samp.sizes=samp.sizes, desired.power=desired.power,
+                        analysisType=cmdType, samp.sizes=samp.sizes, 
+                        desired.power=desired.power,
                         Leff=Leff, possible.cvs=possible.cvs)
 result.df <- do.call("rbind", result.list)
 
