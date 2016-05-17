@@ -54,11 +54,13 @@ The `*RequiredSampleSize` functions (\*="smg" or "ratiometric" followed by "Bbd"
 
 In the situation where there is additional unaccounted variability in the mutation rate not captured by the model, then it is expected there will be inflated false positives. To evaluate the expected number of false positives, a binomial model is compared with a beta-binomial with a certain level of residual uncertainty in the mutation rate. The beta-binomial represents the actual true variation, while the binomial model represents that utilized for a SMG analysis. In this scenario the critical value establishing the threshold for statistical significance is established by the binomial model, and the probability that a beta-binomial reaches this baseline is calculated. Expected false positives for ratio-metric methods are computed similarly, except the variable which has variablitity is `P` rather than the mutation rate. Assuming a total number of genes (18,500 by default), the expected number of false positive significantly mutated genes is simply the probability times the number of genes.
 
-## Sample Size Calculation
+## SMG method
+
+### Sample Size Calculation
 
 An important aspect of designing cancer exome seqeuncing studies is to determine how many cancer samples are required for sufficient power to detect driver genes present at a certain prevalence.
 
-### Assuming an exact mutation rate
+#### Assuming an exact mutation rate
 
 In general the mutation rate is not precisely known, but could be assumed to be known for the sake of power calculations. This results in an overly optimistic assessment of the required number of cancer samples. In the known mutation rate scenario, an exact binomial power calculation is performed.
 
@@ -70,12 +72,12 @@ samp.sizes <- seq(100, 4000, by=100)
 desired.power <- .9
 eff.size <- .02  # fraction of samples above background
 mut.rate <- 1e-5
-alpha.level <- 5e-6  # roughly a bonferoni corrected significance level
+signif.level <- 5e-6  # roughly a bonferoni corrected significance level
 
-smgBinomRequiredSampleSize(desired.power, mut.rate, samp.sizes, eff.size, alpha.level)
+smgBinomRequiredSampleSize(desired.power, mut.rate, samp.sizes, eff.size, signif.level)
 ```
 
-### Accounting for uncertain mutation rate
+#### Accounting for uncertain mutation rate
 
 Adjusting for uncertainty in mutation rate better represents the actual required number of sequenced samples. To handle uncertain mutation rates (with a certain coefficient of variation), a beta-binomial power test is performed.
 
@@ -88,7 +90,7 @@ smgBbdRequiredSampleSize(desired.power, mut.rate, cv, samp.sizes, eff.size)
 
 Notice the minimum required samples raised from 1,500 to 3,500 by accounting for uncertainty of mutation rate with a coefficient of variation of .2.
 
-## Calculating powered effect size
+### Calculating powered effect size
 
 If you already have a certain number of samples, often it is helpful to understand the extent to which rare significantly mutated genes are characterized. 
 
@@ -97,16 +99,79 @@ If you already have a certain number of samples, often it is helpful to understa
 possible.eff.sizes <- seq(.01, .2, by=.01)  # fraction of samples above background
 num.samples <- 1000  # number of samples in study
 
-smgBbdPoweredEffectSize(possible.eff.sizes, desired.power, mut.rate, cv, num.samples, alpha.level)
+smgBbdPoweredEffectSize(possible.eff.sizes, desired.power, mut.rate, cv, num.samples, signif.level)
 ```
 
 In this example, drivers present in 4% of samples above background mutation rate have sufficient power to be detected.
 
-## Expected false positives
+### Expected false positives
 
 ```{r, fig.show='hold'}
 bbd.params <- rateCvToAlphaBeta(mut.rate, cv)
 smg.binom.false.pos(bbd.params$alpha, bbd.params$beta, samp.sizes)
+```
+
+Here, the total number of genes (`num.genes`) was left at the default of 18,500, and likewise for the significance level (5e-6) and effective gene length (1500*3/4).
+
+## Ratio-metric method
+
+### Sample Size Calculation
+
+Since ratio-metric methods represent an alternative computational approach, they may have differences in statistical power compared to SMG methods.
+
+#### Assuming an exact proportion
+
+The expected background proportion out of total mutations in a gene that fall into a specific type is generally more stable than mutation rate, e.g. presumed inactivating mutations (nonsense, splice site, lost stop/start, and frameshift indels). In the fixed mutation proportion scenario, an exact binomial power calculation is performed.
+
+```{r, fig.show='hold'}
+# setup parameters
+samp.sizes <- seq(100, 1000, by=10)
+desired.power <- .9
+eff.size <- .02  # fraction of samples above background
+mut.rate <- 1e-5
+signif.level <- 5e-6  # roughly a bonferoni corrected significance level
+p <- .107  # 10.7% is approximately the percentage of inactivating mutations
+
+ratiometricBinomRequiredSampleSize(p, desired.power, samp.sizes, mut.rate,  
+                                   eff.size, signif.lvl=signif.level)
+```
+
+#### Accounting for uncertainty
+
+Adjusting for uncertainty in the proprotion `P` can represent heterogeneity in acquiring mutations. To handle uncertainty in `P` (with a certain coefficient of variation), a beta-binomial power test is performed.
+
+```{r, fig.show='hold'}
+# setup parameters
+cv <- .2  # coefficient of variation for ratio-metric proportion
+
+ratiometricBbdRequiredSampleSize(p, cv, desired.power, samp.sizes, 
+                                 mut.rate, eff.size)
+```
+
+Notice the minimum required samples raised from 770 to 890 by accounting for uncertainty of proportion of inactivating mutations with a coefficient of variation of .2. Both numbers are considerably lower than an approach based on mutation rate (1500 and 3500, respectively).
+
+### Calculating powered effect size
+
+If you already have a certain number of samples, often it is helpful to understand the extent to which rare significantly mutated genes are characterized. 
+
+```{r, fig.show='hold'}
+# setup parameters
+possible.eff.sizes <- seq(.01, .1, by=.005)  # fraction of samples above background
+num.samples <- 600  # number of samples in study
+
+ratiometricBbdPoweredEffectSize(possible.eff.sizes, desired.power, p, cv, 
+                                mut.rate, num.samples, signif.level)
+```
+
+In this example, drivers present with the ratio-metric feature of interest at 3% of samples above background mutation rate have sufficient power to be detected with 600 samples.
+
+### Expected false positives
+
+```{r, fig.show='hold'}
+bbd.params <- rateCvToAlphaBeta(p, cv)
+samp.sizes <- seq(200, 4000, by=200)
+ratiometric.binom.false.pos(bbd.params$alpha, bbd.params$beta, 
+                            samp.sizes, mut.rate)
 ```
 
 Here, the total number of genes (`num.genes`) was left at the default of 18,500, and likewise for the significance level (5e-6) and effective gene length (1500*3/4).
