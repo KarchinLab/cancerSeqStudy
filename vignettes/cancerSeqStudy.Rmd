@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes (SMG) fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. However, recent methods have taken an alternative approach known as "ratio-metric" method. Ratio-metric methods examine specific compositions of mutations normalized by the total number of mutations occurring in the gene. Regardless of methodology, analysis not accounting for the uncertainty in mutation parameters yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
+Identifying genes with more mutations then expected has been central methodology for identifying putative cancer driver genes in exome sequencing studies of cancer samples. Identifying significantly mutated genes (SMG) fundamentally relies on estimating a background mutation rate. Mutation rate varies over more than 2 orders of magnitude providing a substantial statistical estimation challenge. However, recent methods have taken an alternative approach known as "ratio-metric". Ratio-metric methods examine specific compositions of mutations normalized by the total number of mutations occurring in the gene. Regardless of methodology, analysis not accounting for the uncertainty in mutation parameters yields overly optimistic assessments. In this package, we examine statistical power (either with known or uncertain mutation rate) and false positives induced by unaccounted variation in mutation rate.
 
 ## Relevant parameters
 
@@ -23,7 +23,7 @@ In contrast to SMGs, ratio-metric methods focuse on particular types of mutation
 
 ### Parameter uncertainty
 
-The above scenario reflects a known fixed mutation rate. Realistically, however, the background mutation rate is estimated and can be uncertain due to both technical and biological factors. To account for uncertainty, a certain coefficient of variation (CV) for the mutation rate can be allowed using a beta-binomial distribution. To move from mutation rate and CV to $$\alpha$$ and $$\beta$$ (typical parameterization of a beta-binomial), the `rateCvToAlphaBeta` function is used.
+The above scenario reflects a known fixed mutation rate. Realistically, however, the background mutation rate is estimated and can be uncertain due to both technical and biological factors. To account for uncertainty, a certain coefficient of variation (CV) for the mutation rate can be allowed using a beta-binomial distribution. To move from mutation rate and CV to $\alpha$ and $\beta$ (typical parameterization of a beta-binomial), the `rateCvToAlphaBeta` function is used.
 
 ```{r, fig.show='hold'}
 library(cancerSeqStudy)
@@ -52,13 +52,13 @@ The `*RequiredSampleSize` functions (\*="smg" or "ratiometric" followed by "Bbd"
 
 ### Expected false positives
 
-In the situation where there is additional unaccounted variability in the mutation rate not captured by the model, then it is expected there will be inflated false positives. To evaluate the expected number of false positives, a binomial model is compared with a beta-binomial with a certain level of residual uncertainty in the mutation rate. The beta-binomial represents the actual true variation, while the binomial model represents that utilized for a SMG analysis. In this scenario the critical value establishing the threshold for statistical significance is established by the binomial model, and the probability that a beta-binomial reaches this baseline is calculated. Assuming a total number of genes (18,500 by default), the expected number of false positive significantly mutated genes is simply the probability times the number of genes.
+In the situation where there is additional unaccounted variability in the mutation rate not captured by the model, then it is expected there will be inflated false positives. To evaluate the expected number of false positives, a binomial model is compared with a beta-binomial with a certain level of residual uncertainty in the mutation rate. The beta-binomial represents the actual true variation, while the binomial model represents that utilized for a SMG analysis. In this scenario the critical value establishing the threshold for statistical significance is established by the binomial model, and the probability that a beta-binomial reaches this baseline is calculated. Expected false positives for ratio-metric methods are computed similarly, except the variable which has variablitity is `P` rather than the mutation rate. Assuming a total number of genes (18,500 by default), the expected number of false positive significantly mutated genes is simply the probability times the number of genes.
 
 ## Sample Size Calculation
 
 An important aspect of designing cancer exome seqeuncing studies is to determine how many cancer samples are required for sufficient power to detect driver genes present at a certain prevalence.
 
-### Assuming a known mutation rate
+### Assuming an exact mutation rate
 
 In general the mutation rate is not precisely known, but could be assumed to be known for the sake of power calculations. This results in an overly optimistic assessment of the required number of cancer samples. In the known mutation rate scenario, an exact binomial power calculation is performed.
 
@@ -128,7 +128,7 @@ $ cd cancerSeqStudy
 $ Rscript R/cancerSeqStudy.R -c 10 -r .107 -o myoutput.txt
 ```
 
-Where .107 represents 10.7% of mutations. To change additional parameters which are evaluated requires changing the cancerSeqStudy script. Alternatively, cancerSeqStudy may be installed and can be run with creating a new R file that uses the installed library. An extensive parameter sweep is shown below.
+Where .107 represents 10.7% of mutations, a typical percentage for inactivating mutations. To change additional parameters which are evaluated requires changing the cancerSeqStudy script. Alternatively, cancerSeqStudy may be installed and can be run with creating a new R file that uses the installed library. An extensive parameter sweep is shown below.
 
 ```{r, eval=FALSE}
 library(cancerSeqStudy)
