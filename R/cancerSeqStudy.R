@@ -81,12 +81,12 @@ smgBbdFullAnalysis <- function(mu, cv, Leff, signif.level, effect.size,
 }
 
 
-ratiometricBbdFullAnalysis <- function(p, cv, mu, L, signif.level, effect.size, 
+ratiometricBbdFullAnalysis <- function(p, cv, mu, Leff, signif.level, effect.size, 
                                        desired.power, samp.sizes, Df){
 
   # find the power and numer of samples needed for a desired power
   powerResult <- ratiometricBbdRequiredSampleSize(p, cv, desired.power, samp.sizes, mu,
-                                                  effect.size, Df, signif.level, L)
+                                                  effect.size, Df, signif.level, Leff)
   bbd.samp.size.min <- powerResult$samp.size.min
   bbd.samp.size.max <- powerResult$samp.size.max
   power.result.bbd <- powerResult$power
@@ -97,7 +97,7 @@ ratiometricBbdFullAnalysis <- function(p, cv, mu, L, signif.level, effect.size,
   
   # find expected number of false positives
   fp.result <- ratiometric.binom.false.pos(params$alpha, params$beta, samp.sizes, 
-                                           mu, L, signif.level=signif.level)
+                                           mu, Leff, signif.level=signif.level)
   
   # save binomial data
   tmp.df <- data.frame(sample.size=samp.sizes)
@@ -142,10 +142,10 @@ smgBinomFullAnalysis <- function(mu, Leff, signif.level, effect.size,
   return(tmp.df)
 }
 
-ratiometricBinomFullAnalysis <- function(p, mu, L, signif.level, effect.size, 
+ratiometricBinomFullAnalysis <- function(p, mu, Leff, signif.level, effect.size, 
                                          desired.power, samp.sizes, Df){
   # calculate power
-  power.result.binom <- ratiometric.binom.power(p, samp.sizes, mu, L=L, 
+  power.result.binom <- ratiometric.binom.power(p, samp.sizes, mu, Leff=Leff, 
                                                 Df=Df, signif.level=signif.level,
                                                 r=effect.size)
   binom.samp.size.min <- samp.sizes[min(which(power.result.binom>=desired.power))]
@@ -187,7 +187,7 @@ runSmgAnalysisList <- function(x, samp.sizes,
 }
 
 runRatiometricAnalysisList <- function(x, samp.sizes, 
-                                       Df=1.0, desired.power=.9, L=1500, 
+                                       Df=1.0, desired.power=.9, Leff=1500*3/4, 
                                        possible.cvs=c()){
   # unpack the parameters
   myp <- x[1]
@@ -197,7 +197,7 @@ runRatiometricAnalysisList <- function(x, samp.sizes,
   
   # run analysis
   result.df <- runRatiometricAnalysis(myp, mymu, myeffect.size, myalpha.level,
-                                      samp.sizes, desired.power, L, Df, possible.cvs)
+                                      samp.sizes, desired.power, Leff, Df, possible.cvs)
 
   return(result.df)
 }
@@ -206,11 +206,11 @@ runRatiometricAnalysisList <- function(x, samp.sizes,
 #' rate, effect.size, and significance level. The purpose of this function is parallelized
 #' code running over a list of parameters. If you are not parallelizing, then use the 
 #' runAnalysis function.
-runAnalysisList <- function(x, analysisType="smg", Leff=1500*3/4, L=1500, Df=1.0, ...){ 
+runAnalysisList <- function(x, analysisType="smg", Leff=1500*3/4, Df=1.0, ...){ 
   if (analysisType=="smg"){
     result <- runSmgAnalysisList(x, Leff=Leff, ...) 
   } else{
-    result <- runRatiometricAnalysisList(x, L=L, Df=Df, ...) 
+    result <- runRatiometricAnalysisList(x, Leff=Leff, Df=Df, ...) 
   }
   return(result)
 }
@@ -238,18 +238,18 @@ runSmgAnalysis <- function(mu, effect.size, signif.level,
 #' Runs the entire power and false positive analysis pipeline.
 runRatiometricAnalysis <- function(p, mu, effect.size, signif.level,
                                    samp.sizes, desired.power=.9, 
-                                   L=1500, Df=1.0, possible.cvs=c()){
+                                   Leff=1500*3/4, Df=1.0, possible.cvs=c()){
   # run beta-binomial model
   result.df <- data.frame()
   for (mycv in possible.cvs){   
     # calculate false positives and power
-    tmp.df <- ratiometricBbdFullAnalysis(p, mycv, mu, L, signif.level, effect.size, 
+    tmp.df <- ratiometricBbdFullAnalysis(p, mycv, mu, Leff, signif.level, effect.size, 
                                          desired.power, samp.sizes, Df)
     result.df <- rbind(result.df, tmp.df)
   }
   
   # save binomial data
-  tmp.df <- ratiometricBinomFullAnalysis(p, mu, L, signif.level, 
+  tmp.df <- ratiometricBinomFullAnalysis(p, mu, Leff, signif.level, 
                                          effect.size, desired.power, 
                                          samp.sizes, Df)
   result.df <- rbind(result.df, tmp.df)
@@ -346,7 +346,7 @@ if (!is.null(opt$ARGS)){
   result.list <- mclapply(param.list, runAnalysisList, mc.cores=opt$mcores,
                           analysisType=cmdType, samp.sizes=samp.sizes, 
                           desired.power=desired.power, Df=driver.frac,
-                          Leff=Leff, L=L, possible.cvs=possible.cvs)
+                          Leff=Leff, possible.cvs=possible.cvs)
   result.df <- do.call("rbind", result.list)
   
   # adjust mutation rates back to the average

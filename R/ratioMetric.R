@@ -10,14 +10,16 @@ suppressPackageStartupMessages(library(VGAM))
 #' @param p background proportion of total mutations falling into specific category
 #' @param N vector of sample sizes
 #' @param mu per base rate of mutation 
+#' @param Df fraction of driver mutations that are the specific one of interest
+#' @param Leff gene length in bases
 #' @param r effect size for power analysis
 #' @param signif.level alpha level for power analysis
 #' @return vector containing power for each sample size
 ratiometric.binom.power <- function(p, N, mu, 
-                                    Df=1.0, L=1500, r=.02,
+                                    Df=1.0, Leff=1500*3/4, r=.02,
                                     signif.level=5e-6){
   # figure out the target mutation rate for effect size is
-  muEffect <- 1 - ((1-mu)^(L) - r)^(1/L)
+  muEffect <- 1 - ((1-mu)^(Leff) - r)^(1/Leff)
   # Calculate the discrepancy between the background and
   # target effect size
   muDiff <- muEffect - mu
@@ -32,7 +34,7 @@ ratiometric.binom.power <- function(p, N, mu,
     # it is expected to occur at least 90% of the time
     j <- 1
     while(j){
-      prob <- pbinom(j-1, L*i, muEffect)
+      prob <- pbinom(j-1, Leff*i, muEffect)
       if(prob >= .1){
         mutEff <- j
         break
@@ -68,19 +70,19 @@ ratiometric.binom.power <- function(p, N, mu,
 #' @param my.beta beta parameter for beta binomial
 #' @param N vector of sample sizes
 #' @param mu per base rate of mutation 
-#' @param L length of gene in bases
+#' @param Leff length of gene in bases
 #' @param r effect size for power analysis
 #' @param signif.level alpha level for power analysis
 #' @return vector containing power for each sample size
 ratiometric.bbd.power <- function(my.alpha, my.beta, 
                                   N, mu, Df=1.0,
-                                  L=1500, r=.02,
+                                  Leff=1500*3/4, r=.02,
                                   signif.level=5e-6){
   # figure out what the ratio-metric probability is from
   # the alpha and beta parameters
   p <- my.alpha / (my.alpha + my.beta)
   # figure out the target mutation rate for effect size is
-  muEffect <- 1 - ((1-mu)^(L) - r)^(1/L)
+  muEffect <- 1 - ((1-mu)^(Leff) - r)^(1/Leff)
   # Calculate the discrepancy between the background and
   # target effect size
   muDiff <- muEffect - mu
@@ -95,7 +97,7 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
     # it is expected to occur at least 90% of the time
     j <- 1
     while(j){
-      prob <- pbinom(j-1, L*i, muEffect)
+      prob <- pbinom(j-1, Leff*i, muEffect)
       if(prob >= .1){
         mutEff <- j
         break
@@ -136,7 +138,7 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
 #' @param num.genes number of genes that are tested
 #' @param signif.level alpha level for power analysis
 ratiometric.binom.false.pos <- function(my.alpha, my.beta,
-                                        N, mu, L=1500,
+                                        N, mu, Leff=1500*3/4,
                                         num.genes=18500,
                                         signif.level=5e-6){
   # calculate the ratio-metric fraction from alpha and beta
@@ -157,7 +159,7 @@ ratiometric.binom.false.pos <- function(my.alpha, my.beta,
     #  }
     #  j <- j+1
     #}
-    mutEff <- ceiling(L*i*mu)
+    mutEff <- ceiling(Leff*i*mu)
     
     # step one, find critical threshold
     j <- 1
@@ -196,9 +198,9 @@ ratiometric.binom.false.pos <- function(my.alpha, my.beta,
 #' @param L gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 ratiometricBinomRequiredSampleSize <- function(p, desired.power, possible.samp.sizes, mu,
-                                               effect.size, Df=1.0, signif.lvl=5e-6, L=1500){
+                                               effect.size, Df=1.0, signif.lvl=5e-6, Leff=1500*3/4){
   # calculate power
-  power.result.ratio <- ratiometric.binom.power(p, possible.samp.sizes, mu, L, 
+  power.result.ratio <- ratiometric.binom.power(p, possible.samp.sizes, mu, Leff, 
                                                 Df=Df, signif.level=signif.lvl,
                                                 r=effect.size)
   ratiometric.samp.size.min <- possible.samp.sizes[min(which(power.result.ratio>=desired.power))]
@@ -226,7 +228,7 @@ ratiometricBinomRequiredSampleSize <- function(p, desired.power, possible.samp.s
 #' @param L gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 ratiometricBbdRequiredSampleSize <- function(p, cv, desired.power, possible.samp.sizes, mu,
-                                             effect.size, Df=1.0, signif.lvl=5e-6, L=1500){
+                                             effect.size, Df=1.0, signif.lvl=5e-6, Leff=1500*3/4){
   # get alpha and beta parameterization
   # for beta-binomial
   params <- rateCvToAlphaBeta(p, cv)
@@ -234,7 +236,7 @@ ratiometricBbdRequiredSampleSize <- function(p, cv, desired.power, possible.samp
   # calculate power
   power.result.ratio <- ratiometric.bbd.power(params$alpha, params$beta, 
                                               possible.samp.sizes,
-                                              mu, L, Df=Df,
+                                              mu, Leff, Df=Df,
                                               signif.level=signif.lvl,
                                               r=effect.size)
   ratiometric.samp.size.min <- possible.samp.sizes[min(which(power.result.ratio>=desired.power))]
@@ -266,11 +268,11 @@ ratiometricBbdRequiredSampleSize <- function(p, cv, desired.power, possible.samp
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 ratiometricBinomPoweredEffectSize <- function(possible.effect.sizes, desired.power, p, mu, 
-                                              samp.size, Df=1.0, signif.level=5e-6, L=1500) {
+                                              samp.size, Df=1.0, signif.level=5e-6, Leff=1500*3/4) {
   # calculate the power for each effect size
   pow.vec <- c()
   for(effect.size in possible.effect.sizes){
-    pow <- ratiometric.binom.power(p, samp.size, mu, L, 
+    pow <- ratiometric.binom.power(p, samp.size, mu, Leff, 
                                    Df=Df, signif.level=signif.level,
                                    r=effect.size)
     pow.vec <- c(pow.vec, pow)
@@ -302,7 +304,7 @@ ratiometricBinomPoweredEffectSize <- function(possible.effect.sizes, desired.pow
 #' @param Leff effective gene length of CDS in bases for an average gene
 #' @return List containing the smallest effect size with sufficient power
 ratiometricBbdPoweredEffectSize <- function(possible.effect.sizes, desired.power, p, cv, mu, 
-                                            samp.size, Df=1.0, signif.level=5e-6, L=1500) {
+                                            samp.size, Df=1.0, signif.level=5e-6, Leff=1500*3/4) {
   # figure out alpha/beta for beta-binomial
   params <- rateCvToAlphaBeta(p, cv)
   
@@ -310,7 +312,7 @@ ratiometricBbdPoweredEffectSize <- function(possible.effect.sizes, desired.power
   pow.vec <- c()
   for(effect.size in possible.effect.sizes){
     pow <- ratiometric.bbd.power(params$alpha, params$beta, 
-                                 samp.size, mu, L, 
+                                 samp.size, mu, Leff, 
                                  Df=Df, signif.level=signif.level,
                                  r=effect.size)
     pow.vec <- c(pow.vec, pow)
