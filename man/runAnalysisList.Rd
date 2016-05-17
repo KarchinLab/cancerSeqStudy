@@ -7,8 +7,7 @@ rate, effect.size, and significance level. The purpose of this function is paral
 code running over a list of parameters. If you are not parallelizing, then use the 
 runAnalysis function.}
 \usage{
-runAnalysisList(x, samp.sizes, desired.power = 0.9, Leff = 1500 * 3/4,
-  possible.cvs = c())
+runAnalysisList(x, analysisType = "smg", Leff = 1500 * 3/4, Df = 1, ...)
 }
 \description{
 This function unpacks a vector x which contains many combinations of the mutation
