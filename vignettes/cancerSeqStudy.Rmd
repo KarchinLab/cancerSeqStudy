@@ -48,7 +48,7 @@ Statistical power calculations involve several relevant parameters, where the la
 * sample size
 * effect size
 
-The `*RequiredSampleSize` functions (\*="bbd" or "binom") calculate the needed number of samples to achieve a desired power for an effect size at a given significance level. Here, effect size is always the fraction of samples above the background mutation rate (BMR). So .02 represents mutated in 2% additional samples above expected from BMR.  While the `*PoweredEffectSize` reports the effect size for wich there is sufficient power at a given sample size. Lastly, `*.power` functions (\*= "smg.binom", "smg.bbd", "ratiometric.binom", or "ratiometric.bbd") solve for statistical power based on a given sample size and effect size.
+The `*RequiredSampleSize` functions (\*="smg" or "ratiometric" followed by "Bbd" or "Binom", e.g., "smgBbd") calculate the needed number of samples to achieve a desired power for an effect size at a given significance level. Here, effect size is always the fraction of samples above the background mutation rate (BMR). So .02 represents mutated in 2% additional samples above expected from BMR.  While the `*PoweredEffectSize` reports the effect size for wich there is sufficient power at a given sample size. Lastly, `*.power` functions (\*= "smg" or "ratiometric", followed by either ".binom" or ".bbd", e.g., "smg.binom") solve for statistical power based on a given sample size and effect size.
 
 ### Expected false positives
 
@@ -113,14 +113,22 @@ Here, the total number of genes (`num.genes`) was left at the default of 18,500,
 
 ## Systematically examining power and false postives
 
-To fully understand the effects on power and false positives, a variable sweep over a grid of potential values can be done. This is best done in parallel on a server with multiple cores. Reducing the number of evaluate mutation rates or the effective number of sample sizes evaluated will substantially increase speed, but will provide lower resolution on the shape of statistical power and false positives. One approach is to download the source files from github and run cancerSeqStudy.R as a script.
+To fully understand the effects on power and false positives, a variable sweep over a grid of potential values can be done. This is best done in parallel on a server with multiple cores. Reducing the number of evaluate mutation rates or the effective number of sample sizes evaluated will substantially increase speed, but will provide lower resolution on the shape of statistical power and false positives. One approach is to download the source files from github and run cancerSeqStudy.R as a script. The following command runs the analysis for significantly mutated gene approaches.
 
 ```{r, engine = 'bash', eval = FALSE}
 $ cd cancerSeqStudy
 $ Rscript R/cancerSeqStudy.R -c 10 -o myoutput.txt
 ```
 
-Where `-c` expressess the number of cores to use, and `-o` designates the output file name. To change the parameters which are evaluated requires changing the cancerSeqStudy script. Alternatively, cancerSeqStudy may be installed and can be run with creating a new R file that uses the installed library. An extensive parameter sweep is shown below.
+Where `-c` expressess the number of cores to use, and `-o` designates the output file name.
+Running the analysis for ratio-metric method requires additionally passing the fraction of mutations expected to be of the category of interest using the `-r` parameter.
+
+```{r, engine = 'bash', eval = FALSE}
+$ cd cancerSeqStudy
+$ Rscript R/cancerSeqStudy.R -c 10 -r .107 -o myoutput.txt
+```
+
+Where .107 represents 10.7% of mutations. To change additional parameters which are evaluated requires changing the cancerSeqStudy script. Alternatively, cancerSeqStudy may be installed and can be run with creating a new R file that uses the installed library. An extensive parameter sweep is shown below.
 
 ```{r, eval=FALSE}
 library(cancerSeqStudy)
