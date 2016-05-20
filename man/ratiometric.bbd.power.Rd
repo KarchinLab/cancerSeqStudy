@@ -6,7 +6,7 @@
 a beta-binomial power model.}
 \usage{
 ratiometric.bbd.power(my.alpha, my.beta, N, mu, Df = 1, Leff = 1500 * 3/4,
-  r = 0.02, signif.level = 5e-06)
+  r = 0.02, signif.level = 5e-06, nonsil.frac = 3/4)
 }
 \arguments{
 \item{my.alpha}{alpha parameter for beta binomial}
@@ -17,11 +17,16 @@ ratiometric.bbd.power(my.alpha, my.beta, N, mu, Df = 1, Leff = 1500 * 3/4,
 
 \item{mu}{per base rate of mutation}
 
-\item{Leff}{length of gene in bases}
+\item{Df}{Fraction of driver mutations which are relavent to 
+the ratio-metric feature of interest.}
+
+\item{Leff}{effective length of gene in bases (Length*nonsil.frac)}
 
 \item{r}{effect size for power analysis}
 
 \item{signif.level}{alpha level for power analysis}
+
+\item{nonsil.frac}{fraction of mutations which are non-silent}
 }
 \value{
 vector containing power for each sample size

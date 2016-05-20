@@ -6,7 +6,7 @@
 for ratio-metric approach}
 \usage{
 ratiometric.binom.power(p, N, mu, Df = 1, Leff = 1500 * 3/4, r = 0.02,
-  signif.level = 5e-06)
+  signif.level = 5e-06, nonsil.frac = 3/4)
 }
 \arguments{
 \item{p}{background proportion of total mutations falling into specific category}
@@ -17,11 +17,13 @@ ratiometric.binom.power(p, N, mu, Df = 1, Leff = 1500 * 3/4, r = 0.02,
 
 \item{Df}{fraction of driver mutations that are the specific one of interest}
 
-\item{Leff}{gene length in bases}
+\item{Leff}{effective gene length in bases (Length*nonsil.frac)}
 
 \item{r}{effect size for power analysis}
 
 \item{signif.level}{alpha level for power analysis}
+
+\item{nonsil.frac}{fraction of mutations which are non-silent}
 }
 \value{
 vector containing power for each sample size
