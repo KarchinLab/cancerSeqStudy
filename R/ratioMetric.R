@@ -17,7 +17,7 @@ suppressPackageStartupMessages(library(VGAM))
 #' @return vector containing power for each sample size
 ratiometric.binom.power <- function(p, N, mu, 
                                     Df=1.0, Leff=1500*3/4, r=.02,
-                                    signif.level=5e-6){
+                                    signif.level=5e-6, nonsil.frac=3/4){
   # figure out the target mutation rate for effect size is
   muEffect <- 1 - ((1-mu)^(Leff) - r)^(1/Leff)
   # Calculate the discrepancy between the background and
@@ -34,9 +34,18 @@ ratiometric.binom.power <- function(p, N, mu,
     # it is expected to occur at least 90% of the time
     j <- 1
     while(j){
-      prob <- pbinom(j-1, Leff*i, muEffect)
+      prob <- pbinom(j-1, round(Leff*i), muEffect)
       if(prob >= .1){
-        mutEff <- j
+        mutEffect <- j
+        break
+      }
+      j <- j+1
+    }
+    j <- 1
+    while(j){
+      prob <- pbinom(j-1, round((1-nonsil.frac)*1/nonsil.frac*Leff*i), mu)
+      if(prob >= .1){
+        mutEffect <- mutEffect + j
         break
       }
       j <- j+1
@@ -45,7 +54,7 @@ ratiometric.binom.power <- function(p, N, mu,
     # step two, find critical threshold
     j <- 1
     while(j){
-      pval <- 1-pbinom(j-1, mutEff, p)
+      pval <- 1-pbinom(j-1, mutEffect, p)
       if(pval <= signif.level){
         Xc <- j
         break
@@ -54,7 +63,7 @@ ratiometric.binom.power <- function(p, N, mu,
     }
     
     # step three, calculate power
-    prob <- 1-pbinom(Xc-1, mutEff, pEffect)
+    prob <- 1-pbinom(Xc-1, mutEffect, pEffect)
     power <- c(power, prob) 
   }
   return(power)
@@ -77,7 +86,8 @@ ratiometric.binom.power <- function(p, N, mu,
 ratiometric.bbd.power <- function(my.alpha, my.beta, 
                                   N, mu, Df=1.0,
                                   Leff=1500*3/4, r=.02,
-                                  signif.level=5e-6){
+                                  signif.level=5e-6,
+                                  nonsil.frac=3/4){
   # figure out what the ratio-metric probability is from
   # the alpha and beta parameters
   p <- my.alpha / (my.alpha + my.beta)
@@ -97,9 +107,18 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
     # it is expected to occur at least 90% of the time
     j <- 1
     while(j){
-      prob <- pbinom(j-1, Leff*i, muEffect)
+      prob <- pbinom(j-1, round(Leff*i), muEffect)
       if(prob >= .1){
-        mutEff <- j
+        mutEffect <- j
+        break
+      }
+      j <- j+1
+    }
+    j <- 1
+    while(j){
+      prob <- pbinom(j-1, round((1-nonsil.frac)*1/nonsil.frac*Leff*i), mu)
+      if(prob >= .1){
+        mutEffect <- mutEffect + j
         break
       }
       j <- j+1
@@ -108,7 +127,7 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
     # step two, find critical threshold
     j <- 1
     while(j){
-      pval <- 1-pbetabinom.ab(j-1, mutEff, my.alpha, my.beta)
+      pval <- 1-pbetabinom.ab(j-1, mutEffect, my.alpha, my.beta)
       if(pval <= signif.level){
         Xc <- j
         break
@@ -117,7 +136,7 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
     }
     
     # step three, calculate power
-    prob <- 1-pbinom(Xc-1, mutEff, pEffect)
+    prob <- 1-pbinom(Xc-1, mutEffect, pEffect)
     power <- c(power, prob) 
   }
   return(power)
@@ -140,7 +159,8 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
 ratiometric.binom.false.pos <- function(my.alpha, my.beta,
                                         N, mu, Leff=1500*3/4,
                                         num.genes=18500,
-                                        signif.level=5e-6){
+                                        signif.level=5e-6,
+                                        nonsil.frac=3/4){
   # calculate the ratio-metric fraction from alpha and beta
   p <- my.alpha / (my.alpha + my.beta)
   # examine power of binomial test
@@ -152,19 +172,19 @@ ratiometric.binom.false.pos <- function(my.alpha, my.beta,
     # it is expected to occur at least 90% of the time
     #j <- 1
     #while(j){
-    #  prob <- pbinom(j-1, L*i, mu)
-    #  if(prob >= .1){
-    #    mutEff <- j
-    #    break
-    #  }
-    #  j <- j+1
+      #prob <- pbinom(j-1, Leff*i, mu)
+      #if(prob >= .9){
+        #mutEff <- j
+        #break
+      #}
+      #j <- j+1
     #}
-    mutEff <- ceiling(Leff*i*mu)
+    mut <- ceiling(1/nonsil.frac*Leff*i*mu)
     
     # step one, find critical threshold
     j <- 1
     while(j){
-      pval <- 1-pbinom(j-1, mutEff, p)
+      pval <- 1-pbinom(j-1, mut, p)
       if(pval <= signif.level){
         Xc <- j
         break
@@ -173,7 +193,7 @@ ratiometric.binom.false.pos <- function(my.alpha, my.beta,
     }
     
     # step two, calculate false positives if overdispersion
-    fp <- 1 - pbetabinom.ab(Xc-1, mutEff, my.alpha, my.beta)
+    fp <- 1 - pbetabinom.ab(Xc-1, mut, my.alpha, my.beta)
     falsePositives <- c(falsePositives, num.genes*fp)
   }
   return(falsePositives)
