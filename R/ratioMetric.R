@@ -33,24 +33,27 @@ ratiometric.binom.power <- function(p, N, mu,
   for(i in N){
     # step one, find the # of mutations where
     # it is expected to occur at least 90% of the time
-    j <- 1
-    while(j){
-      prob <- pbinom(j-1, round(Leff*i), muEffect)
-      if(prob >= .1){
-        mutEffect <- j
-        break
-      }
-      j <- j+1
-    }
-    j <- 1
-    while(j){
-      prob <- pbinom(j-1, round((1-nonsil.frac)*1/nonsil.frac*Leff*i), mu)
-      if(prob >= .1){
-        mutEffect <- mutEffect + j
-        break
-      }
-      j <- j+1
-    }
+    #j <- 1
+    #while(j){
+      #prob <- pbinom(j-1, round(Leff*i), muEffect)
+      #if(prob >= .1){
+        #mutEffect <- j
+        #break
+      #}
+      #j <- j+1
+    #}
+    #j <- 1
+    #while(j){
+      #prob <- pbinom(j-1, round((1-nonsil.frac)*1/nonsil.frac*Leff*i), mu)
+      #if(prob >= .1){
+        #mutEffect <- mutEffect + j
+        #break
+      #}
+      #j <- j+1
+    #}
+    totRiskBases = 1/nonsil.frac*Leff*i
+    nonsilRiskBases = Leff*i
+    mutEffect <- ceiling(nonsilRiskBases*muEffect + (totRiskBases-nonsilRiskBases)*mu)
     
     # step two, find critical threshold
     j <- 1
@@ -109,24 +112,27 @@ ratiometric.bbd.power <- function(my.alpha, my.beta,
   for(i in N){
     # step one, find the # of mutations where
     # it is expected to occur at least 90% of the time
-    j <- 1
-    while(j){
-      prob <- pbinom(j-1, round(Leff*i), muEffect)
-      if(prob >= .1){
-        mutEffect <- j
-        break
-      }
-      j <- j+1
-    }
-    j <- 1
-    while(j){
-      prob <- pbinom(j-1, round((1-nonsil.frac)*1/nonsil.frac*Leff*i), mu)
-      if(prob >= .1){
-        mutEffect <- mutEffect + j
-        break
-      }
-      j <- j+1
-    }
+    #j <- 1
+    #while(j){
+      #prob <- pbinom(j-1, round(Leff*i), muEffect)
+      #if(prob >= .1){
+        #mutEffect <- j
+        #break
+      #}
+      #j <- j+1
+    #}
+    #j <- 1
+    #while(j){
+      #prob <- pbinom(j-1, round((1-nonsil.frac)*1/nonsil.frac*Leff*i), mu)
+      #if(prob >= .1){
+        #mutEffect <- mutEffect + j
+        #break
+      #}
+      #j <- j+1
+    #}
+    totRiskBases = 1/nonsil.frac*Leff*i
+    nonsilRiskBases = Leff*i
+    mutEffect <- ceiling(nonsilRiskBases*muEffect + (totRiskBases-nonsilRiskBases)*mu)
     
     # step two, find critical threshold
     j <- 1
