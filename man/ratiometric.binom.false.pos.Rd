@@ -6,7 +6,7 @@
 a ratio-metric feature.}
 \usage{
 ratiometric.binom.false.pos(my.alpha, my.beta, N, mu, Leff = 1500 * 3/4,
-  num.genes = 18500, signif.level = 5e-06)
+  num.genes = 18500, signif.level = 5e-06, nonsil.frac = 3/4)
 }
 \arguments{
 \item{my.alpha}{alpha parameter for beta binomial}
@@ -17,11 +17,16 @@ ratiometric.binom.false.pos(my.alpha, my.beta, N, mu, Leff = 1500 * 3/4,
 
 \item{mu}{mutation rate per base}
 
+\item{Leff}{efective gene CDS length in bases}
+
 \item{num.genes}{number of genes that are tested}
 
 \item{signif.level}{alpha level for power analysis}
 
-\item{L}{gene CDS length in bases}
+\item{nonsil.frac}{fraction of mutations which are non-silent}
+}
+\value{
+vector containing expected false positive genes
 }
 \description{
 calculates the false positives for a binomial model of

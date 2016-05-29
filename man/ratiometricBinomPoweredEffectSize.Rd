@@ -19,6 +19,8 @@ ratiometricBinomPoweredEffectSize(possible.effect.sizes, desired.power, p, mu,
 
 \item{samp.size}{number of cancer samples in study}
 
+\item{Df}{fraction of driver mutations that are the specific one of interest}
+
 \item{signif.level}{significance level for binomial test}
 
 \item{Leff}{effective gene length of CDS in bases for an average gene}

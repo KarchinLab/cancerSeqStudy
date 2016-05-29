@@ -21,9 +21,11 @@ ratiometricBbdRequiredSampleSize(p, cv, desired.power, possible.samp.sizes, mu,
 
 \item{effect.size}{fraction of samples above background mutation rate}
 
-\item{signif.level}{significance level for binomial test}
+\item{Df}{fraction of driver mutations that are the specific one of interest}
 
-\item{L}{gene length of CDS in bases for an average gene}
+\item{signif.lvl}{significance level for binomial test}
+
+\item{Leff}{effective gene length of CDS in bases for an average gene}
 }
 \value{
 List containing the smallest effect size with sufficient power
